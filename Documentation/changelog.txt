@@ -1,0 +1,59 @@
+0.0.8.3 (1/4/2007)
+--------------------
+	- First public release of Onnac
+	- Added 'ELink mode', which adds an [edit] link after every internal link. Neat. :)
+	- Added improved SQL error messages in administrative interface
+	- Upgraded Codepress to v0.8.13
+	- Added FCKeditor to editing interface
+	- Improved Mysql 4.0 support, no more subqueries (maybe)
+	- Added mod_rewrite error detection
+	- Added nice CSS skin to administrative interface
+	- Added a 'tree' directory browser to administrative interface
+	- Reworked installer to use the import functions
+	- The default installation now is in its own directory, can be easily modified
+		- Added a simple export function to create install.osf file from this directory
+	- Cool bugfixes all over the place
+
+
+0.0.8.2 (11/28/2006)
+---------------------
+	- Changed some configuration variables
+	- Added some postgre compatibility for 7.x, no longer using MD5() SQL function
+	- Added 'Logout' feature for administration pages
+	- Added SQL transaction support
+	- Added export/import capabilities (Import only supports templates and content at the moment)
+	- Removed codepress files from DB, and placed them in their own directory so its
+	easier to modify them. Also, postgre doesn't like images in the DB either (in text fields). :)
+	
+
+0.0.8.1 (11/7/2006)
+--------------------
+	- Upgraded Codepress to version 0.8.11
+	- Fixed "//" issue with URL redirection and mod_rewrite
+
+0.0.8 (10/24/2006)
+-------------------
+	- Changed name to Onnac
+	- Fixed authentication flaws
+	- Added SSL option for authentication
+
+0.0.7 (10/23/2006)
+-------------------
+	- Upgraded Codepress to version 0.8.9
+	- Removed digest authentication and we are now using a javascript
+		md5 challenge hashing scheme.
+	- Changed tables for user-related stuff
+
+0.0.6 (10/19/2006)
+----------------
+	- Added Codepress javascript highlighting
+	- Added installation script
+	- Added columns last_update, last_update_by to templates table
+	- Added template editor
+	- Fixed page editor to display/update last_update_by field
+	- Updated index.php to check for existance of config.inc.php and warn user
+	- Menu rendering no longer automatically includes <ul></ul> tags
+
+0.0.5 (6/30/2006)
+---------------
+	- Things work, upgrade from previous betas

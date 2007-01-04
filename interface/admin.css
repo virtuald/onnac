@@ -1,0 +1,175 @@
+/* body style */
+body{
+font-family: Arial, Helvetica, sans-serif;
+font-size: 0.8em;
+list-style-type: circle;
+}
+
+a{
+text-decoration: none;
+}
+
+a:hover{
+color: #ff0000;
+}
+
+/* list style */
+li{
+padding-bottom: 0.2em;
+}
+
+/* default table settings 
+table{
+border: 0.1em dotted #99ccff;
+margin: 0.5em;
+}
+
+.htable tr:hover{
+background: #cccccc;
+}
+*/
+
+thead{
+background: #000000;
+color: #ffffff;
+}
+
+/* special items */
+#adm_header{
+padding: 1em;
+background-color: #3399ff;
+color: white;
+font-size: 1.5em;
+}
+
+#adm_body{
+width: 800px;
+margin: 0 auto;
+}
+
+#adm_content{
+padding: 1em;
+border: 1px dotted #000000;
+}
+
+#adm_footer{
+padding: 1em;
+background-color: #3399ff;
+color: white;
+font-size: 0.7em;
+text-align: center;
+}
+
+/* floating login id on screen */
+#adm_logout{
+text-align: right;
+float:right;
+}
+
+/* url table stuff */
+.adm_class{
+	margin-left: 0.25em; 
+	border-left: 1px solid #000000;
+	border-right: 1px solid #aaaaaa;
+	border-bottom: 1px solid #999999;
+}
+
+.adm_dir_header span{
+	/*border: 1px solid #aaaaaa;*/
+	background: #ffffff;
+	color: #aaaaaa;
+	margin-right: 0.5em;
+	text-align: center;
+	font-family: Courier;
+}
+
+.adm_dir_header {
+	margin: 0.25em 0 0 0.25em; 
+	padding: 0.25em;
+	background: #cccccc;
+	display: block;
+	cursor: pointer;
+	/*border: 0.1em solid #aaaaaa;*/
+}
+
+.adm_dir_header a{
+	color: #000000;
+}
+
+.adm_url_table{
+	width: 100%;
+}
+.admu_url{
+	width: 20%;
+	text-align: left;
+}
+.admu_title{
+	width: 20%;
+	text-align: left;
+}
+.admu_mod{
+	width: 20%;
+	text-align: right;
+}
+.admu_mod_by{
+	width: 15%;
+	text-align: center;
+}
+.admu_end{
+	width: 25%;
+	text-align: right;
+}
+
+/* a moving list */
+
+#adm_list{
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+#adm_list li{
+	display: inline;
+}
+
+#adm_list li a{
+	border-left: 2px solid #999999;
+	padding: 0.5em;
+	text-decoration: none;
+	text-align: center;
+	background-color: #eeeeee;
+	color: #000000;
+}
+
+#adm_list li a:hover{
+	background-color: #bbbbbb;
+}
+
+.adm_form{
+	border: 1px dashed #000000;
+	background-color: #eeeeee;
+	padding: 0.5em;
+}
+
+/* editing interface stuff */
+
+
+#adm_edarea_editor{
+	border-left: 2px solid #999999;
+	border-top: 1px solid #000000;
+	padding: 0.5em;
+}
+
+#codepress{
+	width: 95%;
+	height: 450px;
+	border: 1px solid #000000;
+}
+
+.sqlerror{
+	background-color: #eeeeee;
+	border: 1px solid #000000;
+	font-family: Courier;
+	padding: 0.5em;
+	margin: 1em;
+}

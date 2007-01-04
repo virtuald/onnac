@@ -1,0 +1,89 @@
+Onnac Installation Notes
+---------------------------------------------------------------------------------
+
+	1. System Requirements
+	2. New Installs
+	3. Upgrading from an older version
+	4. Updating the Codepress or FCKeditor editing tools
+	5. Uninstall
+
+	
+1. System Requirements
+-----------------------
+
+Apache Web Server 1.3.x or 2.x
+PHP 4.1 or Greater
+MySQL 4.x or Greater, OR Postgre 7.x or Greater
+
+Certain things may break under certain versions of these software packages. If 
+we find out more, we'll mention it here in future releases.
+
+The administrative interface requires Firefox 1.5+ or Internet Explorer 5.5+, with
+javascript and cookies enabled. 
+
+	
+2. New Installs
+----------------
+
+There is a convienent installation script, located at install/install.php in
+this distribution. You can run this script from your web browser, and it will 
+generate an .htaccess file and a config.inc.php file inside the install directory.
+You should place the .htaccess file at the root of the CMS installation, and place 
+config.inc.php in the include directory.
+
+It is HIGHLY recommended that you disallow access to the installation directory
+after you install. Delete the directory, or use an .htaccess with a directive like:
+
+<Limit GET>
+order deny,allow
+deny from all
+</Limit>
+
+
+3. Upgrading from an older version
+-----------------------------------
+
+Since I run this software on production sites, I will generally try to avoid making
+breaking changes to the database structure of Onnac. There is no automated 
+upgrade mechanism, you must manually do it. 
+
+Personally, I run an apache/php/mysql setup on my development workstations, and
+do development/upgrades on those first before doing updates on production sites. 
+I highly recommend that you do testing first before you upgrade.
+
+The recommended upgrade procedure will probably go something like this. :)
+
+a) Use the 'Import' function to import the install.osf file from 
+./install/default/ directory. Make sure you only overwrite the administrative
+template and interface file. 
+b) Copy new distribution files over old files
+	-- index.php and /include/*.php first, see if it works
+	-- /include/admin/* next
+	-- /interface/* next
+	You should NOT copy the install directory over, it is not needed.
+	
+In general, if it doesn't work then there are a few specific things that could have
+broken:
+
+	-- Database structure changed (see changelog)
+	-- We added a new $cfg variable that you need to update your config.inc.php with
+
+Generally, look at the changelog for details. We will try to mention any relevant 
+changes there, or in this document.
+
+
+4. Updating the Codepress or FCKeditor editing tools
+-----------------------------------------------------
+
+In general, we will try to keep these two tools up to date with current releases of
+them. However, if you want to upgrade yourself because you're having issues, in 
+general you can copy the distribution files over their respective directories at
+/interface. 
+
+FCKEditor is trickier than Codepress to upgrade. Look at the directory structure 
+inside of /interface, and find the parts that match... and it should probably work. 
+
+5. Uninstall
+-------------
+
+Delete all the files, and delete the database.

@@ -1,0 +1,78 @@
+Onnac API Notes:
+-----------------
+
+Following is a short description of various features and ways that you can 
+access information from Onnac. I will try to keep this relatively up to date.
+
+
+HTML Special strings
+---------------------
+
+	##rootdir##			Root directory of CMS
+	##pageroot##		Root directory of current page
+	##banner##			Insert code for banner here
+	##title##			Insert page title here
+	##menu##			Insert menu list html here	
+	
+	##content##			Only valid in (and must be specified by) templates.
+						Inserts the content of the page at this spot.
+						Usage in any other pages will be ignored. 
+
+**If you call special_item_strip($item), then the item will not be escaped
+in the page.
+
+Configuration Variable: $cfg
+----------------------------
+
+To access the global variables, you must use the global $cfg variable. A short
+description of some of the variables follows. 
+
+$cfg['rootURL']			Root URL of the CMS installation
+$cfg['page_root']		URL for the current page directory
+$cfg['title']			Page title
+$cfg['db_type']			Database type. Currently supported values are 'mysql' and 'postgres'
+$cfg['db_host']			Address of the database server
+$cfg['output_replace']	If true (default), then the program will replace special strings (as 
+						mentioned above), otherwise it will not do so.
+
+All dynamic php content should start with <?php and end with ?>, for maximum
+compatibility do NOT use short tags ( <? ). 
+
+Authentication Notes:
+----------------------
+
+To make authentication work, you MUST include ./include/auth.inc.php, and
+run code similar to this:
+
+	require_once("./include/auth.inc.php");
+	
+	// DO NOT INCLUDE THIS LINE if you are running from within the CMS!
+	//$dbCon = db_connect($cfg['db_host'],$cfg['db_user'],$cfg['db_pass'],$cfg['db_name']);
+	
+	// permissions
+	$perm_modify = "Modify site";
+	$perm_view = "View pagecounts";
+
+	global $auth;
+	$auth = new authentication("$perm_modify;$perm_view");
+		
+	if (!$auth->loggedIn){
+		$auth->authenticate();		// display the login form
+		return;
+	}
+
+
+If the authentication class is passed a blank parameter, then it will allow
+any users that are in the database to log in. Otherwise, users must be apart
+of the group(s) that is specified in the parameter, or a member of the 'root'
+group. Multiple groups may be specified by seperating the group names with
+a semicolon. 
+
+You can get the username by referencing $auth->username, or the user_id from 
+$auth->user_id . If you need to know if a user belongs to a specific group, 
+you may call $auth->verifyMembership("groupname").
+
+In a standalone page, you must require_once ./include/auth.inc.php (remember
+to alter the path accordingly!). Also, you must make a mysql connection before 
+calling the constructor!
+

@@ -1,0 +1,71 @@
+Importing and Exporting Data from Onnac
+----------------------------------------
+
+This information is subject to change. Last updated: 11/11/2006
+
+Contents
+---------------------------------------------------------------------------------
+
+	1. Exporting Data
+	2. Importing Data
+	3. In the event of corruption
+	4. Importing from other CMS
+
+
+1. Exporting Data
+---------------
+
+Onnac exports data by creating an array of variables from the contents of the
+database, and then uses the PHP function serialize() to create a text stream of
+data and send it back to a browser. 
+
+In the administration interface provided with Onnac, one of the menu options is
+'Import/Export Site'. When you go to this page, then you will be provided with
+options that will allow you to export most of the data of the database into a 
+file that can later be imported back into Onnac if you desire.
+
+2. Importing Data
+---------------
+
+Onnac can import data that was exported from the same version of Onnac. 
+
+
+3. In the event of corruption
+------------------------------
+
+If you are unable to convince Onnac to import the export data into a database, 
+the following script can help you recover the raw data from the export file.
+
+<?php
+
+	$filename = 'filename of export data.osf';
+	
+	$import_data = unserialize(file_get_contents($filenane));
+	array_walk($import_data,'entitize');
+	
+	echo "<pre>";
+	print_r($import_data);
+	echo "</pre>";
+	
+	
+function entitize(&$item,$key){
+	$item = htmlentities($item);
+}
+
+?>
+
+This script will serialize the data and print the contents out to the browser 
+viewing the page. However, the import function should not fail unless the data
+has been corrupted somehow -- in which case the unserialize function may not
+recover the data either. The serialize/unserialize functions create a
+representation of the php variables in a textual format, so in the event of
+data corruption you can open the export file with a text editor and you may
+be able to recover the information
+
+4. Importing from other CMS
+----------------------------
+
+At this time, Onnac does not support automated importing from other Content
+Management Systems.
+
+
