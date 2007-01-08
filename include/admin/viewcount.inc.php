@@ -30,7 +30,7 @@
 	TODO:
 		Add function to edit page counts
 		Add function to view counts for only certain directory
-		Add function to view counts for only 
+		
 */
 
 function viewcount(){
@@ -73,7 +73,7 @@ function viewcount(){
 			
 		echo "</table>";
 	}else{
-		echo "Error: No page counts found!";
+		onnac_error("No page counts found!");
 	}
 	
 ?><p><a href="##pageroot##/">Return to administration menu</a><?php

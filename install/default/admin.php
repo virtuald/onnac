@@ -75,38 +75,25 @@ switch ($mode){
 		}
 		break;
 	
-	case "edbanner":
+	case "banner":
 		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edbanner.inc.php");
-			edbanner();
+			require_once("./include/admin/banner.inc.php");
+			manage_banners();
+		}
+		break;
+
+		
+	case "menu":
+		if ($auth->verifyMembership($perm_modify)){
+			require_once("./include/admin/menu.inc.php");
+			manage_menus();
 		}
 		break;
 		
-	case "edbanneritem":
+	case "users":
 		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edbanneritem.inc.php");
-			edbanneritem();
-		}
-		break;
-		
-	case "edmenu":
-		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edmenu.inc.php");
-			edmenu();
-		}
-		break;
-		
-	case "edmenuitem":
-		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edmenuitem.inc.php");
-			edmenuitem();
-		}
-		break;
-		
-	case "manageusers":
-		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/manageusers.inc.php");
-			manageusers();
+			require_once("./include/admin/users.inc.php");
+			manage_users();
 		}
 		break;
 		
@@ -158,14 +145,15 @@ switch ($mode){
 	if ($auth->verifyMembership($perm_modify)){ ?>
 	<li><a href="##pageroot##/?mode=edurl">Edit content and pages</a></li>
 	<li><a href="##pageroot##/?mode=edtemplate">Edit templates</a></li>
-	<li><a href="##pageroot##/?mode=edbanner">Edit banner groups</a></li>
-	<li><a href="##pageroot##/?mode=edbanneritem">Edit banner items</a></li>
-	<li><a href="##pageroot##/?mode=edmenu">Edit menu groups</a></li>
-	<li><a href="##pageroot##/?mode=edmenuitem">Edit menu items</a></li>
-	<li><a href="##pageroot##/?mode=manageusers">Manage users</a></li>
-	<li><a href="##pageroot##/?mode=showerrors">Show 404 Errors</a></li>
+	<br/>
+	<li><a href="##pageroot##/?mode=banner">Manage Banners</a></li>
+	<li><a href="##pageroot##/?mode=menu">Manage Menus</a></li>
+	<li><a href="##pageroot##/?mode=users">Manage Users</a></li>
+	<br/>
 	<li><a href="##pageroot##/?mode=import">Import Site Data</a></li>
 	<li><a href="##pageroot##/?mode=export">Export Site Data</a></li>
+	<br/>
+	<li><a href="##pageroot##/?mode=showerrors">Show 404 Errors</a></li>
 	<?php }
 	
 	if ($auth->verifyMembership($perm_view)){

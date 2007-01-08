@@ -37,7 +37,10 @@
 function import_data(){
 
 	global $cfg;
-		
+
+	if (!isset($install_mode))
+		$install_mode = false;
+	
 	$action = get_get_var('action');
 	echo '<h4>Import Data</h4>';
 	
@@ -240,7 +243,7 @@ function import_content($imported,$user_approved,$install_mode){
 	global $auth,$cfg;
 	
 	if (!$install_mode)
-		$username = username;
+		$username = $auth->username;
 	else
 		$username = "installer";
 	

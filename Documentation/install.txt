@@ -4,6 +4,8 @@ Onnac Installation Notes
 	1. System Requirements
 	2. New Installs
 	3. Upgrading from an older version
+		a. Version-specific notes
+		b. Recommended upgrade procedure
 	4. Updating the Codepress or FCKeditor editing tools
 	5. Uninstall
 
@@ -50,6 +52,18 @@ upgrade mechanism, you must manually do it.
 Personally, I run an apache/php/mysql setup on my development workstations, and
 do development/upgrades on those first before doing updates on production sites. 
 I highly recommend that you do testing first before you upgrade.
+
+3a. Version specific upgrade notes:
+------------------------------------
+
+  From    |   To      | Note
+----------+-----------+-------------------------------------------------------------
+0.0.8.3-  | 0.0.8.4+  | You should add to users DB field 'description', varchar(255)
+----------+-----------+-------------------------------------------------------------
+
+
+3b. Recommended upgrade procedure
+----------------------------------
 
 The recommended upgrade procedure will probably go something like this. :)
 

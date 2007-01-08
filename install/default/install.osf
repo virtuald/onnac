@@ -1,5 +1,5 @@
 a:8:{s:7:"content";a:4:{i:0;a:10:{s:8:"url_hash";s:32:"6666cd76f96956469e7be39d750cc7d9";s:3:"url";s:1:"/";s:12:"page_execute";i:0;s:6:"hidden";i:0;s:10:"page_title";s:22:"Onnac CMS Default Page";s:12:"page_content";s:216:"<h4>Welcome to Onnac!</h4>
-<p>Currently, there is no content on this website. You can add content at the <a href="##rootdir##/interface/">Onnac Website Administration Interface</a>. Thank you for choosing Onnac!</p>";s:11:"last_update";i:1166811576;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:1;a:10:{s:8:"url_hash";s:32:"308587b793cf5791bb6305992995693e";s:3:"url";s:14:"/error403.html";s:12:"page_execute";i:0;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:82:"<h3>403 - Access Denied!</h3><p>There was an error trying to access this page!</p>";s:11:"last_update";i:1166811576;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:2;a:10:{s:8:"url_hash";s:32:"26907e3bbb208e3f309c2c3223479312";s:3:"url";s:14:"/error404.html";s:12:"page_execute";i:1;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:2483:"<?php
+<p>Currently, there is no content on this website. You can add content at the <a href="##rootdir##/interface/">Onnac Website Administration Interface</a>. Thank you for choosing Onnac!</p>";s:11:"last_update";i:1167970267;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:1;a:10:{s:8:"url_hash";s:32:"308587b793cf5791bb6305992995693e";s:3:"url";s:14:"/error403.html";s:12:"page_execute";i:0;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:82:"<h3>403 - Access Denied!</h3><p>There was an error trying to access this page!</p>";s:11:"last_update";i:1167970267;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:2;a:10:{s:8:"url_hash";s:32:"26907e3bbb208e3f309c2c3223479312";s:3:"url";s:14:"/error404.html";s:12:"page_execute";i:1;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:2483:"<?php
 /*
 * Copyright (c) 2006, Dustin Spicuzza
 * All rights reserved.
@@ -54,7 +54,7 @@ a:8:{s:7:"content";a:4:{i:0;a:10:{s:8:"url_hash";s:32:"6666cd76f96956469e7be39d7
 	
 
 ?><h3>404 - File not found!</h3>
-<p>Oops! You tried to access <strong>##rootdir##<?php echo $error_url;?></strong>, and this does not exist! If you linked here from another website, please remind them to update their links. If it was from our website, then please notify us about this error! Thanks!";s:11:"last_update";i:1166811576;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:3;a:10:{s:8:"url_hash";s:32:"40b4817880d54c22d26423c0237a3b31";s:3:"url";s:11:"/interface/";s:12:"page_execute";i:1;s:6:"hidden";i:1;s:10:"page_title";s:34:"### Onnac Administration Interface";s:12:"page_content";s:5546:"<?php
+<p>Oops! You tried to access <strong>##rootdir##<?php echo $error_url;?></strong>, and this does not exist! If you linked here from another website, please remind them to update their links. If it was from our website, then please notify us about this error! Thanks!";s:11:"last_update";i:1167970267;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:3;a:10:{s:8:"url_hash";s:32:"40b4817880d54c22d26423c0237a3b31";s:3:"url";s:11:"/interface/";s:12:"page_execute";i:1;s:6:"hidden";i:1;s:10:"page_title";s:34:"### Onnac Administration Interface";s:12:"page_content";s:5073:"<?php
 /*
 * Copyright (c) 2006-2007, Dustin Spicuzza
 * All rights reserved.
@@ -131,38 +131,25 @@ switch ($mode){
 		}
 		break;
 	
-	case "edbanner":
+	case "banner":
 		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edbanner.inc.php");
-			edbanner();
+			require_once("./include/admin/banner.inc.php");
+			manage_banners();
+		}
+		break;
+
+		
+	case "menu":
+		if ($auth->verifyMembership($perm_modify)){
+			require_once("./include/admin/menu.inc.php");
+			manage_menus();
 		}
 		break;
 		
-	case "edbanneritem":
+	case "users":
 		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edbanneritem.inc.php");
-			edbanneritem();
-		}
-		break;
-		
-	case "edmenu":
-		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edmenu.inc.php");
-			edmenu();
-		}
-		break;
-		
-	case "edmenuitem":
-		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/edmenuitem.inc.php");
-			edmenuitem();
-		}
-		break;
-		
-	case "manageusers":
-		if ($auth->verifyMembership($perm_modify)){
-			require_once("./include/admin/manageusers.inc.php");
-			manageusers();
+			require_once("./include/admin/users.inc.php");
+			manage_users();
 		}
 		break;
 		
@@ -214,14 +201,15 @@ switch ($mode){
 	if ($auth->verifyMembership($perm_modify)){ ?>
 	<li><a href="##pageroot##/?mode=edurl">Edit content and pages</a></li>
 	<li><a href="##pageroot##/?mode=edtemplate">Edit templates</a></li>
-	<li><a href="##pageroot##/?mode=edbanner">Edit banner groups</a></li>
-	<li><a href="##pageroot##/?mode=edbanneritem">Edit banner items</a></li>
-	<li><a href="##pageroot##/?mode=edmenu">Edit menu groups</a></li>
-	<li><a href="##pageroot##/?mode=edmenuitem">Edit menu items</a></li>
-	<li><a href="##pageroot##/?mode=manageusers">Manage users</a></li>
-	<li><a href="##pageroot##/?mode=showerrors">Show 404 Errors</a></li>
+	<br/>
+	<li><a href="##pageroot##/?mode=banner">Manage Banners</a></li>
+	<li><a href="##pageroot##/?mode=menu">Manage Menus</a></li>
+	<li><a href="##pageroot##/?mode=users">Manage Users</a></li>
+	<br/>
 	<li><a href="##pageroot##/?mode=import">Import Site Data</a></li>
 	<li><a href="##pageroot##/?mode=export">Export Site Data</a></li>
+	<br/>
+	<li><a href="##pageroot##/?mode=showerrors">Show 404 Errors</a></li>
 	<?php }
 	
 	if ($auth->verifyMembership($perm_view)){
@@ -232,12 +220,12 @@ switch ($mode){
 }
 
 
-?>";s:11:"last_update";i:1167920878;s:13:"template_name";s:5:"Admin";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}}s:9:"templates";a:2:{i:0;a:3:{s:13:"template_name";s:7:"Default";s:8:"template";s:71:"<html>
+?>";s:11:"last_update";i:1168210583;s:13:"template_name";s:5:"Admin";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}}s:9:"templates";a:2:{i:0;a:3:{s:13:"template_name";s:7:"Default";s:8:"template";s:71:"<html>
 <title>##title##</title>
 <body>
 ##content##
 </body>
-</html>";s:11:"last_update";i:1167929523;}i:1;a:3:{s:13:"template_name";s:5:"Admin";s:8:"template";s:594:"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+</html>";s:11:"last_update";i:1167970267;}i:1;a:3:{s:13:"template_name";s:5:"Admin";s:8:"template";s:594:"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
 	<title>##title##</title>
@@ -255,4 +243,4 @@ switch ($mode){
 </body>
 </html>
 
-";s:11:"last_update";i:1167929513;}}s:7:"banners";a:0:{}s:5:"menus";a:0:{}s:8:"dumptype";s:7:"content";s:11:"export_date";s:31:"Thu, 04 Jan 2007 12:10:37 -0500";s:14:"export_version";i:1;s:18:"export_description";s:23:"Onnac installation file";}
+";s:11:"last_update";i:1167970267;}}s:7:"banners";a:0:{}s:5:"menus";a:0:{}s:8:"dumptype";s:7:"content";s:11:"export_date";s:31:"Sun, 07 Jan 2007 17:56:45 -0500";s:14:"export_version";i:1;s:18:"export_description";s:23:"Onnac installation file";}

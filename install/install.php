@@ -126,7 +126,7 @@ if ($db_type != ""){
 		$validated = 0;
 	}
 	
-	if (strlen($username) < 6){
+	if (strlen($username) < 5){
 		echo "<p><strong>Error</strong>: Username should be greater than 5 characters long</p>";
 		$validated = 0;
 	}
@@ -136,6 +136,9 @@ if ($db_type != ""){
 		$validated = 0;
 	}else if (strlen($password) < 6){
 		echo "<p><strong>Error</strong>: Password should be greater than 6 characters!</p>";
+		$validated = 0;
+	}else if ($password == $username){
+		echo "<p><strong>Error</strong>: Password should NOT be the same as the username!</p>";
 		$validated = 0;
 	}
 
@@ -176,6 +179,7 @@ if ($db_type != ""){
 	if ($validated)
 		echo "<p>Begin DB Creation...";
 
+$indexes = array();
 
 $q_content = 
 "CREATE TABLE " . $db_prefix . "content (
@@ -203,9 +207,12 @@ $q_banners =
 
 $q_banner_groups = 
 "CREATE TABLE " . $db_prefix . "banner_groups (
-	banner_id integer NOT NULL default '0' PRIMARY KEY,
+	banner_id integer NOT NULL default '0',
 	item_id integer NOT NULL default '0'
 )";
+
+$indexes[] = "CREATE INDEX banner_id ON " . $db_prefix . "banner_groups (banner_id)";
+$indexes[] = "CREATE INDEX m_item_id ON " . $db_prefix . "banner_groups (item_id)";
 
 $q_banner_items = 
 "CREATE TABLE " . $db_prefix . "banner_items (
@@ -227,6 +234,9 @@ $q_menu_groups =
 	item_id     integer NOT NULL default '0'
 )";
 
+$indexes[] = "CREATE INDEX menu_id ON " . $db_prefix . "menu_groups (menu_id)";
+$indexes[] = "CREATE INDEX m_item_id ON " . $db_prefix . "menu_groups (item_id)";
+
 $q_menu_items =
 "CREATE TABLE " . $db_prefix . "menu_items (
 	item_id 	SERIAL NOT NULL PRIMARY KEY,
@@ -247,6 +257,7 @@ $q_users =
 "CREATE TABLE " . $db_prefix . "users (
 	user_id 		SERIAL NOT NULL PRIMARY KEY,
 	username 		varchar(32) NOT NULL default '' UNIQUE,
+	description		varchar(255) NOT NULL default '',
 	hash 			varchar(32) NOT NULL default ''
 )";
 
@@ -255,6 +266,9 @@ $q_user_groups =
 	user_id 		integer NOT NULL default '0',
 	group_id 	integer NOT NULL default '0'
 )";
+
+$indexes[] = "CREATE INDEX user_id ON " . $db_prefix . "user_groups  (user_id)";
+$indexes[] = "CREATE INDEX group_id ON " . $db_prefix . "user_groups  (group_id)";
 
 $q_user_group_names = 
 "CREATE TABLE " . $db_prefix . "user_group_names (
@@ -290,12 +304,26 @@ $q_errors =
 	
 	// begin next transaction
 	if ($validated) db_begin_transaction();
+	
+	// create indexes
+	if ($validated) echo "success!</p><p>Creating indexes...";
+	foreach($indexes as $query){
+		if ($validated){
+			if (!db_query($query)){
+				echo "error.</p>";
+				db_rollback_transaction();
+				$validated = 0;
+			}
+		}
+	}
+	
+	if ($validated) db_commit_transaction();
 		
 	// create root user
 	if ($validated){
 		echo "success!</p><p>Creating admin user...";
 		
-		$result = db_query("INSERT INTO " . $db_prefix . "users (username,hash) VALUES ('" . db_escape_string($username) . "','" . md5(db_escape_string($username) . ':' . db_escape_string($password)) . "')");
+		$result = db_query("INSERT INTO " . $db_prefix . "users (username,hash,description) VALUES ('" . db_escape_string($username) . "','" . md5(db_escape_string($username) . ':' . db_escape_string($password)) . "','Administrator')");
 		
 		if (!$result || db_affected_rows($result) < 1){
 			$validated = 0;
@@ -377,8 +405,6 @@ $q_errors =
 		
 		echo "</div>";
 	}
-	
-
 	
 	// create configuration file
 	if ($validated){

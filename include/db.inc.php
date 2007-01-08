@@ -268,7 +268,12 @@ function db_is_valid_result($result,$show_error = true){
 	global $cfg;
 
 	if (!$result && $show_error){
-		echo "<p class=\"sqlerror\"><strong>SQL Error:</strong> " . htmlentities(db_error());
+		$err = db_error();
+		if ($err == "")
+			$err = "No SQL error occurred. This may be an invalid error message!";
+			
+		echo "<p class=\"sqlerror\"><strong>SQL Error:</strong> " . htmlentities($err);
+		
 		if (isset($cfg['db_last_sql_query']))
 			echo "<br /><br /><strong>Last SQL Query:</strong><br />" . htmlentities($cfg['db_last_sql_query']);
 		echo '</p>';

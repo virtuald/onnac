@@ -51,6 +51,14 @@ function get_get_var($varname){
 	return $_GET[$varname];
 }
 
+function get_cookie_var($varname){
+	
+	if (!isset($_COOKIE[$varname]))
+		return "";
+		
+	return $_COOKIE[$varname];
+}
+
 
 /*
 	
@@ -130,11 +138,12 @@ function generate_select_option($id,$matchItem,$query,$none = false){
 	
 		$rows = array();
 	
-		if (db_num_rows($result) > 0){
+		if (db_num_rows($result) > 0)
 			while($row = db_fetch_row($result))
 				$rows[] = $row;
-			generate_select_from_array($id,$matchItem,$rows,$none);
-		}
+		
+		generate_select_from_array($id,$matchItem,$rows,$none);
+		
 	}
 }
 
@@ -177,6 +186,14 @@ function generate_select_from_array($id,$matchItem,$items,$none = false){
 	echo '</select>';
 }
 
+// at some point in the future, we could use this for logging of some kind
+function onnac_error($message, $retval = false){
+
+	echo "<p class=\"error\"><strong>Error:</strong> $message";
+	
+	return $retval;
+	
+}
 
 // debugging item
 function prn($var){

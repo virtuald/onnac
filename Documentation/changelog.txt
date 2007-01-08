@@ -1,3 +1,18 @@
+0.0.8.4 (current)
+------------------
+	- BREAKING CHANGE: Added 'Description' field to users
+	- fixed generate_select_option in util.inc.php
+	- Added user management
+	- Added better error handling in administrative interface
+	- Fixed edtemplate update/insert error
+	- Upgrade to Codepress v0.8.14
+	- Fixed import install_mode variable errors
+	- Merged menu/banner/user management (adm_item.inc.php)
+	- Fixed install script
+		- User validation
+		- Banner primary key
+		- It now creates some SQL indexes to optimize performance
+
 0.0.8.3 (1/4/2007)
 --------------------
 	- First public release of Onnac

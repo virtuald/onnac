@@ -26,6 +26,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 	Administration tool -- edit page content
+	
+	TODO: Clean this code up. It works, but so messy... 
 		
 */
 
@@ -53,7 +55,7 @@ function edurl($error = "no"){
 	function toggle_hidden(item){
 		var hidden = document.getElementById(item);
 		
-		if (hidden.style.display == "none")
+		if (!hidden.style.display || hidden.style.display == "none")
 			hidden.style.display = "block";
 		else
 			hidden.style.display = "none";
@@ -111,11 +113,8 @@ function edurl($error = "no"){
 		
 			case "newpage":
 				// verify the POST parameter
-				if (!isset($_POST['newurl'])){
-					header( "location:$cfg[page_root]/?mode=edurl");
-					db_close();
-					return;
-				}
+				if (!isset($_POST['newurl']))
+					return onnac_error("Invalid parameters!");
 				
 				// ok, its the new page url
 				$page_url = $_POST['newurl'];
@@ -132,14 +131,19 @@ function edurl($error = "no"){
 				
 				$result = db_query("SELECT page_title,page_execute,banner_id,template_id,menu_id,page_content," . db_get_timestamp_query("last_update") . " FROM $cfg[t_content] WHERE url_hash = '" . md5($page_url) . "'");
 				
-				if (!$result || db_num_rows($result) == 0){
+				if (!db_is_valid_result($result))
+					return onnac_error("Cannot verify page existance!");
+				
+				$rows = db_num_rows($result);
+				
+				if ($rows == 0){
 
 					echo "Creating new page: $page_url<p>";
 					edurl_render_editor($page_url,"",0,-1,-1,-1,"");
 				
 				}else{
 			
-					if (db_num_rows($result) == 1){
+					if ($rows == 1){
 			
 						$row = db_fetch_row($result);
 						
@@ -147,8 +151,7 @@ function edurl($error = "no"){
 						edurl_render_editor($page_url,$row[0],$row[1],$row[2],$row[3],$row[4],$row[5]);
 						
 					}else{
-						echo "Error obtaining existing page information!!<p>";
-						edurl("shownew");
+						onnac_error("Error obtaining existing page information!!");
 					}
 				}
 				
@@ -163,10 +166,10 @@ function edurl($error = "no"){
 				echo "Deleting page $page_url from database...<p>";
 				$result = db_query("DELETE FROM $cfg[t_content] WHERE url_hash = '" . md5($page_url) . "'");
 				
-				if ($result && db_affected_rows($result) != 0)
+				if (db_is_valid_result($result) && db_affected_rows($result) != 0)
 					echo "Done.<p>$page_url has been deleted.";
 				else
-					echo "Error deleting page!! Error: " . db_error();
+					onnac_error("Error deleting page!");
 			
 				echo "<p><a href=\"##pageroot##/?mode=edurl\">Website content administration</a><br/><a href=\"##pageroot##/\">Administration Home</a></p>";
 			
@@ -186,9 +189,14 @@ function edurl($error = "no"){
 			case "hide":
 				// toggle the hidden state of the url			
 				$result = db_query("UPDATE $cfg[t_content] SET hidden = CASE WHEN hidden = 1 THEN 0 ELSE 1 END WHERE url = '$page_url'");
+				
 				// refresh page and exit
-				header( "location:$cfg[page_root]/?mode=edurl");
-				db_close();
+				if (db_is_valid_result($result)){
+					header( "Location:$cfg[page_root]/?mode=edurl");
+					db_close();
+				}else
+					onnac_error("Error setting 'hidden' flag!");
+				
 				break;
 				
 			case 'addtodir':
@@ -234,7 +242,7 @@ function edurl($error = "no"){
 				break;
 				
 			default:
-				header( "location:$cfg[page_root]/?mode=edurl");
+				header( "Location:$cfg[page_root]/?mode=edurl");
 				break;
 		}
 	}
@@ -722,7 +730,7 @@ function edurl_add_data($url){
 	// fail on any error -- the only reason one of these wouldn't be passed, is if you were
 	// screwing with the input. 
 	if (!isset($_POST['edurl_content'])){
-		echo "Error in content!";
+		onnac_error( "Error in content!");
 		return 1;
 	}else{
 	
@@ -733,14 +741,14 @@ function edurl_add_data($url){
 	
 	// new url
 	if (!isset($_POST['edurl_url'])){
-		echo "No URL specified!";
+		onnac_error("No URL specified!");
 		return 1;
 	}else{
 		$h_new_url = htmlentities($_POST['edurl_url']);
 		$new_url = db_escape_string($_POST['edurl_url']);
 		
 		if ($new_url == ""){
-			echo "Error, empty URL specified!";
+			onnac_error("Empty URL specified!");
 			return 1;
 		}
 		
@@ -751,22 +759,22 @@ function edurl_add_data($url){
 		
 		if ($new_url != $url){
 			$result = db_query("SELECT url FROM $cfg[t_content] WHERE url = '$new_url'");
-			if ($result && db_num_rows($result) != 0){
-				echo "Error, URL already exists!";
+			if (db_is_valid_result($result) && db_num_rows($result) != 0){
+				onnac_error("URL already exists!");
 				return 1;
 			}
 		}
 	}
 	
 	if (!isset($_POST['edurl_title'])){
-		echo "Error in title!";
+		onnac_error("Error in title!");
 		return 1;
 	}else{
 		$title = db_escape_string($_POST['edurl_title']);
 	}
 	
 	if (!isset($_POST['edurl_execute'])){
-		echo "Error in execute!";
+		onnac_error("Error in execute!");
 		return 1;
 	}else{
 		$execute = db_escape_string($_POST['edurl_execute']);
@@ -777,47 +785,45 @@ function edurl_add_data($url){
 	}else if ($execute == "no"){
 		$execute = 0;
 	}else{
-		echo "Invalid input to execute";
+		onnac_error("Invalid input to execute");
 		return 1;
 	}
 		
 	if (!isset($_POST['edurl_template'])){
-		echo "Error in param template!";
+		onnac_error("Error in param template!");
 		return 1;
 	}else{
 		$templateID = db_escape_string($_POST['edurl_template']);
 	}
 	
 	if (!is_numeric($templateID)){
-		echo "Invalid input to template";
+		onnac_error("Invalid input to template");
 		return 1;
 	}
 		
 	if (!isset($_POST['edurl_banner'])){
-		echo "Error in banner!";
+		onnac_error("Error in banner!");
 		return 1;
 	}else{
 		$bannerID = db_escape_string($_POST['edurl_banner']);
 	}
 	
 	if (!is_numeric($bannerID)){
-		echo "Invalid input to bannerID: $bannerID";
+		onna_error("Invalid input to bannerID: $bannerID");
 		return 1;
 	}	
 		
 	if (!isset($_POST['edurl_menu'])){
-		echo "Error in menu";
+		onnac_error("Error in menu");
 		return 1;
 	}else{
 		$menuID = db_escape_string($_POST['edurl_menu']);
 	}
 	
 	if (!is_numeric($menuID)){
-		echo "Invalid input to menuID: $menuID";
+		onnac_error("Invalid input to menuID: $menuID");
 		return 1;
 	}
-	
-	// XXX: COMPAT: NOW() may not be compatible... 
 	
 	// ok, thats all good. Now, lets update, and if that fails, we shall do an input
 	$result = db_query("UPDATE $cfg[t_content] SET url = '$new_url', url_hash = '" . md5($new_url) . "', page_execute = '$execute', page_title = '$title', banner_id = '$bannerID', template_id = '$templateID', menu_id = '$menuID', page_content = '$content', last_update = NOW(), last_update_by = '" . $auth->username . "' WHERE url_hash = '" . md5($url) . "'");
@@ -825,11 +831,12 @@ function edurl_add_data($url){
 	if (db_is_valid_result($result)){
 		
 		if (db_affected_rows($result) != 1){
-			echo "Update failed, inserting new row...<p>";
+		
 			// update failed, we need to insert a new row
 			$result = db_query("INSERT INTO $cfg[t_content] (url_hash,url,page_execute,page_title,banner_id,template_id,menu_id,page_content,last_update,last_update_by) VALUES ('" . md5($new_url) . "','$new_url','$execute','$title','$bannerID','$templateID','$menuID','$content',NOW(),'" . $auth->username . "')");
+			
 			if (!db_is_valid_result($result)){
-				echo "Error adding information to database for $h_url!!!";
+				onnac_error("Error adding information to database for $h_url!!!");
 				edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
 				return 1;
 			}

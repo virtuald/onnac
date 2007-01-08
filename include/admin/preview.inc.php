@@ -46,7 +46,6 @@ function preview(){
 	$h_group = htmlentities(get_get_var('group'));
 	$item_id = db_escape_string(get_get_var('item_id'));
 	
-	
 	switch ($type){
 	
 		case "banner":
@@ -62,8 +61,8 @@ function preview(){
 				
 					if (db_has_rows($result)){
 						while($row = db_fetch_row($result)){
-							echo "<img src=\"$row[0]\" alt=\"$row[1]\"><br>";
-							echo "Src: $row[0]<br>Alt: $row[1]<p>";
+							echo "<img src=\"" . htmlentnties($row[0]) . "\" alt=\"" . htmlentities($row[1]) . "\"><br>";
+							echo "Src: " . htmlentities($row[0]) . "<br>Alt: " . htmlentities($row[1]) . "<p>";
 						}
 					}else{
 						echo "No banners found for group $h_group.";
@@ -85,6 +84,10 @@ function preview(){
 				$result = db_query("SELECT src,alt FROM $cfg[t_banner_items] WHERE item_id = '$item_id'");
 				if ($result && db_num_rows($result) == 1){
 					$row = db_fetch_row($result);
+					
+					$row[0] = htmlentities($row[0]);
+					$row[1] = htmlentities($row[1]);
+					
 					echo "<img src=\"$row[0]\" alt=\"$row[1]\"><br>";
 					echo "Src: $row[0]<br>Alt: $row[1]<p>";
 				}else{
@@ -100,6 +103,9 @@ function preview(){
 			if ($result && db_num_rows($result) == 1){
 		
 				$row = db_fetch_row($result);
+				$row[0] = htmlentities($row[0]);
+				$row[1] = htmlentities($row[1]);
+				
 				echo "Preview of menu group $row[0] (ID: $h_group)<p>";
 			
 				$result = db_query("SELECT mit.text,mit.href,mgt.rank FROM $cfg[t_menu_groups] mgt, $cfg[t_menu_items] mit WHERE mgt.menu_id = '$group' AND mit.item_id = mgt.item_id ORDER BY mgt.rank ASC");
