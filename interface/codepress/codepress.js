@@ -13,42 +13,32 @@ CodePress = {
 	range : null,
 	language : null,
 	scrolling : false,
-	saveHandler : null,
-	isSaving : false,
 		
 	// set initial vars and start sh
 	initialize : function() {
 		if(typeof(editor)=='undefined'&&!arguments[0]) return;
 		this.detect();
 		chars = '|13|32|191|57|48|187|188|'; // charcodes that trigger syntax highlighting
-		cc = (browser.ie) ? '\xad' : '&shy;' ; // control char
+		cc = '\u2009'; // control char
 		if(browser.ff) {
 			editor = document.getElementById('ffedt');
 			document.designMode = 'on';
-			document.addEventListener('keypress', this.keyHandler, true);
+			document.addEventListener('keydown', this.keyHandler, true);
 			window.addEventListener('scroll', function() { if(!CodePress.scrolling) CodePress.syntaxHighlight('scroll') }, false);
 		}
 		else if(browser.ie) {
 			editor = document.getElementById('ieedt');
 			editor.contentEditable = 'true';
-			document.onkeydown = this.keyHandler;
+			document.attachEvent('onkeydown', this.keyHandler);
 			window.attachEvent('onscroll', function() { if(!CodePress.scrolling) CodePress.syntaxHighlight('scroll') });
 		}
 		else {
-			// textarea without syntax highlighting for non supported browsers
-			if (document.getElementById && document.createElement){
-				textarea = document.createElement('textarea');
-				textarea.id = 'cp-unsupported';
-				// TODO: make this somehow 'fit'
-				textarea.rows = '30';
-				textarea.cols = '60';
-				document.getElementById('ffedt').appendChild(textarea);
-			}
-			alert('Your browser is not fully supported! Please upgrade your browser.');
+			// TODO: textarea without syntax highlighting for non supported browsers
+			alert('your browser is not supported at the moment');
 			return;
 		}
 		this.syntaxHighlight('init');
-		setTimeout(function() { window.scroll(0,0) },50);
+		setTimeout(function() { window.scroll(0,0) },50); // scroll IE to top
 	},
 
 	// detect browser, for now IE and FF
@@ -77,23 +67,12 @@ CodePress = {
 			else if((charCode==90||charCode==89) && evt.ctrlKey) { // undo and redo
 				(charCode==89||evt.shiftKey) ? CodePress.actions.redo() : CodePress.actions.undo() ;
 				evt.returnValue = false;
-				if(evt.preventDefault)evt.preventDefault();
+				if(browser.ff)evt.preventDefault();
 			}
 			else if(charCode==86 && evt.ctrlKey)  { // paste
 				// TODO: pasted text should be parsed and highlighted
 			}
-			else if(charCode==115 && evt.ctrlKey) { // ctrl-s, activate optional save handler
-				if (CodePress.isSaving == false && CodePress.saveHandler != null){
-					CodePress.isSaving = true;
-					CodePress.saveHandler(CodePress.getCode());
-					
-					evt.returnValue = false;
-					if (evt.preventDefault) evt.preventDefault();
-					if (evt.stopPropagation) evt.stopPropagation();
-					
-					CodePress.isSaving = false;
-				}
-			}
+
 		}
 	},
 
@@ -120,7 +99,7 @@ CodePress = {
 		}
 		else {
 			this.scrolling = false;
-			mid = code.indexOf(browser.ie ? "&shy;" : "&amp;shy;" ); 
+			mid = code.indexOf(cc);
 			if(mid-2000<0) {ini=0;end=4000;}
 			else if(mid+2000>code.length) {ini=code.length-4000;end=code.length;}
 			else {ini=mid-2000;end=mid+2000;}
@@ -195,18 +174,12 @@ CodePress = {
 	
 	// transform syntax highlighted code to original code
 	getCode : function() {
-	
-		if (!browser.ie && !browser.ff)
-			return document.getElementById('cp-unsupported').value;
-	
 		code = editor.innerHTML;
-//		code = code.replace(/<pre>(<p>)*|(<\/p>)*<\/pre>/gi,'');
 		code = code.replace(/<br>/gi,'\n');
 		code = code.replace(/<\/p>/gi,'\r');
 		code = code.replace(/<p>/gi,'\n');
 		code = code.replace(/&nbsp;/gi,'');
-		code = code.replace(/\xad/g,'');
-		code = code.replace(/&shy;/gi,'\xad');
+		code = code.replace(/\u2009/g,'');
 		code = code.replace(/<.*?>/g,'');
 		code = code.replace(/&lt;/g,'<');
 		code = code.replace(/&gt;/g,'>');
@@ -215,7 +188,6 @@ CodePress = {
 	},
 
 	// put some code inside editor
-	// you can pass parameters like (language,code) or just textarea object id
 	setCode : function() {
 		if(typeof(arguments[1])=='undefined') {
 			language = top.document.getElementById(arguments[0]).lang.toLowerCase();
@@ -225,12 +197,6 @@ CodePress = {
 			language = arguments[0];
 			code = arguments[1];
 		}
-		
-		if (!browser.ie && !browser.ff){
-			document.getElementById('cp-unsupported').value = code;
-			return;
-		}
-		
 		document.designMode = 'off';
 	   	head = document.getElementsByTagName('head')[0];
 	   	script = document.createElement('script');
@@ -238,8 +204,7 @@ CodePress = {
 	   	script.src = 'languages/codepress-'+language+'.js';
 		head.appendChild(script)
 		document.getElementById('cp-lang-style').href = 'languages/codepress-'+language+'.css';
-		code = code.replace(/\xad/gi,'');
-		code = code.replace(/&shy;/gi,'&amp;shy;');
+		code = code.replace(/\u2009/gi,'');
 		code = code.replace(/&/gi,'&amp;');		
        	code = code.replace(/</g,'&lt;');
         code = code.replace(/>/g,'&gt;');
