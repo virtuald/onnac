@@ -93,6 +93,12 @@ class adm_item{
 								// data is in this order: 
 								// sql_item_data fields, sql_item_hidden fields
 								// fn($data,$is_new,$item_id);
+	
+	// [Optional page settings, functions]
+	var $item_html;				// extra HTML shown on the item page
+	var $group_html;			// extra HTML shown on the group page
+	
+	var $custom_functions;		// custom functions that can be accessed using action=[function name]
 								
 	// initialize
 	function adm_item(){
@@ -102,6 +108,8 @@ class adm_item{
 		$sql_item_hidden = array();
 		
 		$sql_item_unique_keys = array();
+		
+		$custom_functions = array();
 		
 		// initialize the optional parameters
 		$order_field = false;
@@ -210,7 +218,7 @@ class adm_item{
 			$this->show_primary($query,'item');
 			
 			// show group content next
-			echo "</div><div id=\"adm_group\" $gv>";
+			echo "$this->item_html</div><div id=\"adm_group\" $gv>";
 			
 			if ($this->group_show_first)
 				$grp_fields = $this->sql_item_data[0];
@@ -231,7 +239,7 @@ class adm_item{
 			
 			$this->show_primary($query,'group');
 			
-			echo "</div>";
+			echo "$this->group_html</div>";
 
 		}else{
 		
@@ -241,6 +249,8 @@ class adm_item{
 		
 			if (method_exists($this,"fn_$action")){
 				call_user_func(array($this,"fn_$action"));
+			}else if(in_array($action,$this->custom_functions)){
+				call_user_func($action);
 			}else{
 				onnac_error('Undefined action!');
 			}

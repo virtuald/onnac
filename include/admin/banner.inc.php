@@ -65,8 +65,64 @@ function manage_banners(){
 	//$manager->remove_hook = 		'user_remove';
 	//$manager->edit_item_hook = 	'user_edititem';
 	
+	$manager->custom_functions = 	array('banner_autofill');
+	$manager->item_html =			
+	"<p><a href=\"$manager->url&amp;action=banner_autofill\">Autofill banner images from $cfg[img_autofill_dir]/</a></p>";
+	
 	$manager->ShowItems();
 	
+}
+
+function banner_autofill(){
+
+	global $cfg;
+
+	$count = 0;
+	$banners = array();
+	
+	// get banner items first, stick into an array
+	$result = db_query("SELECT src FROM $cfg[t_banner_items]");
+	
+	if (!db_is_valid_result($result))
+		return onnac_error("Could not detect existing banner items!");
+		
+	while ($row = db_fetch_row($result))
+		$banners[] = $row[0];
+	
+	$dir = "$cfg[basedir]$cfg[img_autofill_dir]/";
+	if (is_dir($dir)){
+	
+		if (!db_is_valid_result(db_begin_transaction()))
+			return onnac_error("Could not begin SQL transaction");
+	
+		$hdir = opendir($dir);
+		while (false !== ($file = readdir($hdir))){
+		
+			// see if it already exists
+			if (is_file("$dir/$file") && !in_array("##rootdir##$cfg[img_autofill_dir]/$file",$banners)){
+			
+				// doesn't exist, add defaults
+				if (!db_is_valid_result(db_query("INSERT INTO $cfg[t_banner_items] (alt, src) VALUES ('default', '##rootdir##$cfg[img_autofill_dir]/" . db_escape_string($file) . "')"))){
+					onnac_error("Error adding banner item to database!");
+					if (!db_rollback_transaction())
+						onnac_error("Error rolling back transaction! Some items may have already been inserted into the database!");
+					return;
+				}
+					
+				$count++;
+			}
+		}
+
+		if (db_is_valid_result(db_commit_transaction()))
+			if ($count)
+				echo "$count banners automatically added.";
+			else
+				echo "All banners already in database.";
+		else
+			onnac_error("Could not commit SQL transaction");
+	}else{
+		onnac_error("Could not open directory: $dir");
+	}
 }
 
 ?>

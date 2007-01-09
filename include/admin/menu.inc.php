@@ -65,42 +65,56 @@ function manage_menus(){
 	//$manager->remove_hook = 		'user_remove';
 	//$manager->edit_item_hook = 	'user_edititem';
 	
+	 
+	$manager->custom_functions = 	array('menu_autofill');
+	$manager->item_html =			
+	"<p><a href=\"$manager->url&amp;action=menu_autofill\">Autofill menu items from content database</a></p>";
+	
+	
 	$manager->ShowItems();
 	
 }
 
-/*		
-				
-	case "autofill":
+// autofill menu items from database -- extraordinarily useful :)
+function menu_autofill(){
 
-		$count = 0;
-		$result = db_query("SELECT page_title,url FROM $cfg[t_content] WHERE hidden = '0'");
-		if (db_has_rows($result)){
-			
-			while($row = db_fetch_row($result)){
-			
-				// see if it already exists
-				$iresult = db_query("SELECT text FROM $cfg[t_menu_items] WHERE href = '##rootdir##" . db_escape_string($row[1]) . "'");
-				if (!$iresult || db_num_rows($iresult) == 0){
-					// doesn't exist, add defaults
-					
-					db_query("INSERT INTO $cfg[t_menu_items] (text, href) VALUES ('" . db_escape_string($row[0]) . "', '##rootdir##" . db_escape_string($row[1]) . "')");
-					$count++;
-				}
-			}
+	global $cfg;
+
+	$count = 0;
+
+	$result = db_query("
+		SELECT a.page_title, a.url
+		FROM $cfg[t_content] a
+		LEFT OUTER JOIN $cfg[t_menu_items] b ON a.url = SUBSTRING(b.href from 12)
+		WHERE b.href IS NULL AND a.hidden = 0");
 	
-			echo "$count Items automatically added. :)<p>";
-		}else{
-			echo "No pages in database.<p>";
-		}
-		edmenuitem("shownew");
-		break;
+	if (!db_is_valid_result($result))
+		return;
+	
+	else if (db_num_rows($result) > 0){
 		
-	default:
-		header( "location:$cfg[page_root]/?mode=edmenuitem");
-		break;
+		if (!db_is_valid_result(db_begin_transaction()))
+			return onnac_error("Error beginning transaction!");
+		
+		while($row = db_fetch_row($result)){
+		
+			if (!db_is_valid_result(db_query("INSERT INTO $cfg[t_menu_items] (text, href) VALUES ('" . db_escape_string($row[0]) . "', '##rootdir##" . db_escape_string($row[1]) . "')"))){
+				onnac_error("Error adding menu item!");
+				if (!db_rollback_transaction())
+					onnac_error("Error rolling back transaction. Some items may have already been added!");
+				return;
+			}
+			
+			$count++;
+		}
+		
+		if (db_is_valid_result(db_commit_transaction()))
+			echo "$count items automatically added.";
+		else
+			onnac_error("Error comitting transaction!");
+	}else{
+		echo "No pages added";
 	}
-
-*/
+}
 
 ?>
