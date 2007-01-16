@@ -13,7 +13,7 @@ CodePress = {
 	range : null,
 	language : null,
 	scrolling : false,
-		
+	
 	// set initial vars and start sh
 	initialize : function() {
 		if(typeof(editor)=='undefined'&&!arguments[0]) return;
@@ -125,12 +125,13 @@ CodePress = {
 			o = o.replace(/<P>/g,'\n');
 			o = o.replace(/<\/P>/g,'\r');
 			o = o.replace(/<.*?>/g,'');
+			o = o.replace(/&nbsp;/g,'');			
 			o = '<PRE><P>'+o+'</P></PRE>';
 			o = o.replace(/\n/g,'<P>');
 			o = o.replace(/\r/g,'<\/P>');
 			o = o.replace(/<P>(<P>)+/,'<P>');
 			o = o.replace(/<\/P>(<\/P>)+/,'</P>');
-			o = o.replace(/<P><\/P>/g,'<P>&nbsp;<\/P>');
+			o = o.replace(/<P><\/P>/g,'<P><BR /><\/P>');
 			x = z = this.split(o,flag);
 		}
 
@@ -175,8 +176,9 @@ CodePress = {
 	// transform syntax highlighted code to original code
 	getCode : function() {
 		code = editor.innerHTML;
-		code = code.replace(/<br>/gi,'\n');
+		code = code.replace(/<br>/g,'\n');
 		code = code.replace(/<\/p>/gi,'\r');
+		code = code.replace(/<p>/i,''); // IE first line fix		
 		code = code.replace(/<p>/gi,'\n');
 		code = code.replace(/&nbsp;/gi,'');
 		code = code.replace(/\u2009/g,'');
