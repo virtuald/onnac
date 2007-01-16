@@ -1,5 +1,10 @@
-0.0.8.4 (current)
+0.0.8.5 (1/16/2007)
 ------------------
+	- Security fix: XSS vulnerability
+	- Upgraded to Codepress v0.8.15
+
+0.0.8.4 (1/8/2007)
+--------------------
 	- BREAKING CHANGE: Added 'Description' field to users
 	- fixed generate_select_option in util.inc.php
 	- Added user management

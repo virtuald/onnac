@@ -58,7 +58,8 @@ I highly recommend that you do testing first before you upgrade.
 
   From    |   To      | Note
 ----------+-----------+-------------------------------------------------------------
-0.0.8.3-  | 0.0.8.4+  | You should add to users DB field 'description', varchar(255)
+0.0.8.x   | 0.0.8.5+  | Be sure to upgrade error404.html! It contains a security fix
+0.0.8.x   | 0.0.8.4+  | You should add to users DB field 'description', varchar(255)
 ----------+-----------+-------------------------------------------------------------
 
 
@@ -69,7 +70,7 @@ The recommended upgrade procedure will probably go something like this. :)
 
 a) Use the 'Import' function to import the install.osf file from 
 ./install/default/ directory. Make sure you only overwrite the administrative
-template and interface file. 
+template and interface file, and if you still have the default error pages, those too. 
 b) Copy new distribution files over old files
 	-- index.php and /include/*.php first, see if it works
 	-- /include/admin/* next
