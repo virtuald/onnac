@@ -144,6 +144,21 @@ function db_fetch_array($result){
 	}
 }
 
+function db_get_last_id($table,$field){
+	global $cfg;
+	switch($cfg['db_type']){
+		case "mysql":
+			return mysql_query("SELECT LAST_INSERT_ID()");
+		
+		case "postgre":
+			// im not 100% confident about this, but theres not a better way
+			return pg_query("SELECT currval('" . $table . "_" . $field . "_seq')");
+		
+		default: 
+			die("Database type not specified in configuration.");
+	}
+}
+
 function db_fetch_assoc($result){
 	global $cfg;
 	switch($cfg['db_type']){
@@ -241,11 +256,26 @@ function db_commit_transaction(){
 	return true;
 }
 
-function db_rollback_transaction(){
+// if $error_msg is specified, this function will always return false. Otherwise,
+// it will return whatever the query value is.. generally a true/false value
+function db_rollback_transaction($error_msg = ''){
 
 	global $cfg;
-	if ($cfg['enable_transactions'] == true)
-		return db_query("ROLLBACK");
+	if ($cfg['enable_transactions'] == true){
+		$result = db_query("ROLLBACK");
+		
+		if ($error_msg == '')
+			return $result;
+		
+		if (!$result)
+			$error_msg .= " Could not rollback SQL transaction! Some changes may already have been made to the database.";
+
+		return onnac_error($error_msg);	
+	}
+	
+	if ($error_msg != '')
+		return onnac_error($error_msg . " Could not rollback SQL transaction! Some changes may already have been made to the database.");
+	
 	return false;
 }
 

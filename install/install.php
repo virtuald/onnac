@@ -145,9 +145,10 @@ if ($db_type != ""){
 	if ($validated){
 		// do the install here
 		
+		require_once('../include/default.inc.php');
+		
 		global $cfg;
 		$cfg['db_type'] = $db_type;
-		$cfg['debug'] = false;
 		
 		if ($enable_transactions == "true")
 			$cfg['enable_transactions'] = true;
@@ -330,8 +331,10 @@ $q_errors =
 			db_rollback_transaction();
 			echo "error.</p>";
 		}else{
-			// get index of userid -- not elegant, but it works
-			$result = db_query("SELECT user_id FROM " . $db_prefix . "users ORDER BY user_id DESC LIMIT 1");
+			// get index of user id
+			// 		in some conditions, this MAY fail on postgre.. hopefully it fails now, instead
+			//		of later on when they use onnac... so we can fix it :)
+			$result = db_get_last_id($db_prefix . "users",'user_id');
 			if ($result && db_num_rows($result) > 0){
 				$row = db_fetch_row($result);
 				$default_user_id = $row[0];
@@ -353,8 +356,10 @@ $q_errors =
 			db_rollback_transaction();
 			echo "error.</p>";
 		}else{
-			// get index of group -- not elegant, but it works
-			$result = db_query("SELECT group_id FROM " . $db_prefix . "user_group_names ORDER BY group_id DESC LIMIT 1");
+			// get index of group
+			// 		in some conditions, this MAY fail on postgre.. hopefully it fails now, instead
+			//		of later on when they use onnac... so we can fix it :)
+			$result = db_get_last_id($db_prefix . "user_group_names",'group_id');
 			if ($result && db_num_rows($result) > 0){
 				$row = db_fetch_row($result);
 				$default_group_id = $row[0];
@@ -379,9 +384,7 @@ $q_errors =
 		}
 	}
 	
-	// end transaction -- the import function uses transactions internally
-	if ($validated)
-		db_commit_transaction();
+
 	
 	// call the import function to easily import the data
 	if ($validated){
@@ -396,15 +399,20 @@ $q_errors =
 		
 		if ($imported !== false && $imported['dumptype'] == 'content'){
 			if (import_content($imported,true,true) == false)
-				$validated = 0;
+				$validated = 0;		// import_content will rollback transaction
 		}else{
 			echo "Error: the import file used is invalid.";
 			$validated = 0;
+			db_rollback_transaction();
 			$is_sql_error = 0;
 		}
 		
 		echo "</div>";
 	}
+	
+	// end transaction
+	if ($validated)
+		db_commit_transaction();
 	
 	// create configuration file
 	if ($validated){
@@ -446,16 +454,6 @@ $q_errors =
 		$config_str .= '$cfg[\'page_403\']' . "\t\t\t= \"/error403.html\";\n";
 		$config_str .= '$cfg[\'page_404\']' . "\t\t\t= \"/error404.html\";\n";
 		$config_str .= "\n";
-		$config_str .= "// If 1, this tells the cache validation script to hash the mtimes of all 'base' scripts, to see if they have\n";
-		$config_str .= "// changed. If 0, then it will only verify the mtime of config.inc.php\n";
-		$config_str .= "// set this to 0 for production use, or 1 for development.\n";
-		$config_str .= '$cfg[\'etag_mtimes\']' . "\t\t\t= 0;\n";
-		$config_str .= "\n";
-		$config_str .= '$cfg[\'login_expires\']' . "\t\t\t= 1800;\t\t// time (in seconds) logins expire";
-		$config_str .= "\n";
-		$config_str .= '$cfg[\'use_ssl\']' . "\t\t\t= false;\t\t// set this to true for auth pages to use SSL\n";
-		$config_str .= '$cfg[\'debug\']' . "\t\t\t=false;\t\t// set this to true to turn on debug messages\n";
-		$config_str .= "\t\t\t\t\t\t\t// should not be set to true in a production environment";
 		$config_str .= "\n?>";
 	
 		if (!write_file_contents("config.inc.php",$config_str)){

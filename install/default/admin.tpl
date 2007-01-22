@@ -4,6 +4,7 @@
 	<title>##title##</title>
 	<link rel="stylesheet" type="text/css" href="##pageroot##/admin.css" />
 	<link rel="stylesheet" type="text/css" href="##pageroot##/admin-print.css" media="print" />
+	<script type="text/javascript" src="##pageroot##/admin.js"></script>
 </head>
 <body>
 <div id="adm_body">

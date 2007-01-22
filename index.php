@@ -29,8 +29,11 @@
 
 */
 
-// this is *really* inefficient, so you should disable magic quotes somewhere else. But in case you forget, this is here
-// or if you're running this from CGI instead of an apache module and you cant change it... :(
+// this is *really* inefficient, so you should disable magic quotes somewhere else. 
+// However, in case you forget, this is here. Also, if you're running php from CGI 
+// instead of an apache module and you cant change it... :(
+// 
+// Code is from the PHP manual
 if (get_magic_quotes_gpc()) {
    function stripslashes_deep($value)
    {
@@ -49,6 +52,8 @@ if (get_magic_quotes_gpc()) {
 
 
 unset($cfg);
+require_once("./include/default.inc.php");
+
 if ((@include './include/config.inc.php') != 1){
 	echo "<html><title>Onnac Not Installed</title><body>Onnac has not been properly installed! Please create an .htaccess file and a config.inc.php file using the <a href=\"install/install.php\">installer</a>!</body></html>";
 	die;
@@ -60,13 +65,14 @@ require_once ("./include/render.inc.php");		// rendering engine
 // detect whether mod_rewrite was enabled correctly!
 if (!isset($_GET['url'])){
 
-	show_internal_error("Error #00: mod_rewrite is not enabled!");
+	show_internal_error("Error #00: mod_rewrite is not enabled! Onnac does not work correctly unless mod_rewrite or its equivalent is enabled.");
 	die;
 }
 
 $input_url = $_GET['url'];
 
 // use output buffering to allow us to output headers whenever needed, and to set Content-Length, among other things
+// (e.g... we can be really lazy :) )
 ob_start("output_callback");
 
 // Lets make a connection to the database here

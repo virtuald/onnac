@@ -27,9 +27,10 @@
 
 	Administration tool -- Import content/menus/etc 
 	
-	This is very messy code and should be cleaned up/verified.. templates and content
-	should *mostly* work. Since this is an integral part of the installer, bugfixes will
+	Since this is an integral part of the installer, bugfixes will
 	be forthcoming very quickly. 
+	
+	Full imports seem to work now! :)
 	
 */
 
@@ -37,9 +38,6 @@
 function import_data(){
 
 	global $cfg;
-
-	if (!isset($install_mode))
-		$install_mode = false;
 	
 	$action = get_get_var('action');
 	echo '<h4>Import Data</h4>';
@@ -49,11 +47,9 @@ function import_data(){
 		// collection of links showing stuff that you can do
 		?>
 <form action="##pageroot##/?mode=import&action=import" enctype="multipart/form-data" method="post">
-	<h4>Import data</h4>
 	File to import: <input name="data" type="file" size="30"/><br/>
 	<input type="submit" value="Import" />
 </form>
-<p><a href="##pageroot##/">Return to administration menu</a></p>
 <?php
 	
 	}else if ($action == "import"){
@@ -71,24 +67,37 @@ function import_data(){
 		
 			// check to see if we need to ask the user to approve anything
 			$user_approved = false;
-			if ($install_mode == true || get_post_var('user_approved') == 'yes')
+			if (get_post_var('user_approved') == 'yes')
 				$user_approved = true;
+		
+			// take care of SQL transaction up here
+			$ret = false;
+			if ($user_approved && !db_begin_transaction())
+				return onnac_error("Could not begin SQL transaction!");
 		
 			// automatically detect import type, and do it!
 			if ($imported['dumptype'] == 'content'){
-				import_content($imported,$user_approved,false);
+				$ret = import_content($imported,$user_approved,false);
 			}else if ($imported['dumptype'] == 'templates'){
-				import_templates($imported,$user_approved,false);
+				$ret = import_templates($imported,$user_approved,false);
 			}else{
 				echo "Invalid import file!<p><a href=\"##pageroot##/?mode=import\">Back</a></p>";
 			}
+			
+			if ($ret && $user_approved && db_is_valid_result(db_commit_transaction()))
+				echo "All imports successful!";
+			
 		}else{
 			echo "Error importing data!<p><a href=\"##pageroot##/?mode=import\">Back</a></p>";
 		}
 			
 	}else{
 		header("Location: $cfg[page_root]?mode=import");	
-	}
+	}	
+	
+	// footer
+	echo "<p><a href=\"##pageroot##/\">Return to main administrative menu</a></p>";
+	
 }
 
 function get_import_data($filename){
@@ -110,7 +119,12 @@ function get_import_data($filename){
 		array_key_exists('dumptype',$imported) &&
 		array_key_exists('export_description',$imported)){
 	
-		echo '<table><tr><td>Export Type:</td><td>'. htmlentities($imported['dumptype']) . "</td></tr><tr><td>Export Date:</td><td>" . htmlentities($imported['export_date']) . '</td></tr><tr><td>Description:</td><td>' . htmlentities($imported['export_description']) . '</table>';
+		echo '<table><tr><td>Export Type:</td><td>'. htmlentities($imported['dumptype']) . "</td></tr><tr><td>Export Date:</td><td>" . htmlentities($imported['export_date']) . '</td></tr><tr><td>Description:</td><td>' . htmlentities($imported['export_description']) . '</td></tr>';
+	
+		if (array_key_exists('onnac_version',$imported))
+			echo "<tr><td>Exported from:</td><td>Onnac $imported[onnac_version]</td></tr>";
+		
+		echo '</table>';
 	
 	}else{
 		return false;
@@ -151,7 +165,7 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 	global $cfg,$auth;
 
 	if (!keys_exist_in($imported,array('templates'),'template import',false))
-		return false;
+		return onnac_error("'templates' key not found in import file!");
 	
 	// check for install mode
 	if (!$install_mode)
@@ -167,7 +181,7 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 		if (!$inside_form){
 ?><p><form method="post" action="##pageroot##/?mode=import&amp;action=import"><input type="submit" value="Continue Import" /><?php 
 		} 
-	?><table border="1"><tr style="background:#000000;color:#ffffff"><td>Template Name</td><td>Current Modify Date</td><td>Import modify date</td><td>Overwrite?</td><td>Insert?</td></tr>
+	?><table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>Template Name</td><td>Current Modify Date</td><td>Import modify date</td><td>Overwrite?</td><td>Insert?</td></tr>
 <?php
 	}
 	
@@ -217,12 +231,7 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 	if ($user_approved){
 	
 		// perform the import
-		$error = do_import($query,'Template');
-		//echo "Did import $error";
-		if ($install_mode == false && !$error && !$inside_form )
-			echo '<p>Template import successful!</p><p><a href="##pageroot##/?mode=import">Back to Import Menu</a><br/><a href="##pageroot##/">Main administration menu</a></p>';
-
-		return $error;
+		return do_import($query,'Template');
 		
 	}else{
 		echo '</table>';
@@ -235,6 +244,7 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 		}
 	}
 	
+	return true;
 }
 
 
@@ -249,7 +259,7 @@ function import_content($imported,$user_approved,$install_mode){
 	
 	// sanity check for arrays
 	if (!keys_exist_in($imported,array('content','templates','menus','banners'),'import',false))
-		return false;
+		return onnac_error("All content keys not found in import file!");
 
 	// this must be first, so things work out nicely
 	if (!$user_approved)
@@ -259,21 +269,19 @@ function import_content($imported,$user_approved,$install_mode){
 	$r_templates = import_templates($imported,$user_approved,$install_mode,true);
 	if ($r_templates === false) return false;
 	
-	//$r_menus = import_menus($imported,$user_approved,$install_mode);
-	//if ($r_menus === false) return false;
+	$menus = import_menus($imported,$user_approved,$install_mode);
+	if ($menus === false) return false;
 	
-	//$r_banners = import_banners($imported,$user_approved,$install_mode);
-	//if ($r_banners === false) return false;
+	$banners = import_banners($imported,$user_approved,$install_mode);
+	if ($banners === false) return false;
 	
 	// get all needed items into an array
-	$menus = get_import_items('name','menu_id',$cfg['t_menus']);
-	$banners = get_import_items('name','banner_id',$cfg['t_banners']);
 	$templates = get_import_items('template_name','template_id',$cfg['t_templates']);
 	$content = get_import_items('url_hash',db_get_timestamp_query('last_update'),$cfg['t_content']);
 	
 	// this comes next
 	if (!$user_approved){
-?><input type="submit" value="Continue Import" /><table border="1"><tr style="background:#000000;color:#ffffff"><td>URL/Warnings</td><td>Current Modify Date</td><td>Import modify date</td><td>Overwrite?</td><td>Insert?</td></tr>
+?><table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>URL/Warnings</td><td>Current Modify Date</td><td>Import modify date</td><td>Overwrite?</td><td>Insert?</td></tr>
 <?php
 	}
 	
@@ -321,9 +329,6 @@ function import_content($imported,$user_approved,$install_mode){
 				else 		// no match? emit a warning
 					$warning .= "<li>template &quot;" . htmlentities($node['template_name']) . "&quot; does not exist</li>";
 			
-			// escape EVERYTHING, we dont need useless errors
-			array_walk($node,'db_total_escape');
-			
 			if (!$user_approved){
 				// ask the user for approval
 			
@@ -345,6 +350,9 @@ function import_content($imported,$user_approved,$install_mode){
 			
 			}else if ($install_mode == true || get_post_var('approved-' . $node['url_hash']) == 'yes'){
 			
+				// escape EVERYTHING, we dont need useless errors
+				array_walk($node,'db_total_escape');
+			
 				// add to the query string
 				// if it exists, then do an UPDATE, otherwise do an INSERT
 				if (array_key_exists($node['url_hash'],$content)){
@@ -362,10 +370,9 @@ VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute
 	
 		// execute our query
 		$success = do_import($query,'Content');
-		if ($success && $install_mode == false){
-			echo '<p><a href="##pageroot##/?mode=import">Back to Import Menu</a><br/>';
-			echo '<a href="##pageroot##/">Main administration menu</a></p>';
-		}
+		
+		if (!$success)
+			return false;
 			
 	}else{
 		// ask for approval
@@ -376,157 +383,25 @@ VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute
 		$_SESSION['imported'] = $imported;
 	}
 
-	// signal success to installer
+	// signal success
 	return true;
-}
-
-// grab information about items into arrays
-function get_keyed_import_items($field1,$field2,$field3,$table){
-	$output = array();
-	$result = db_query("SELECT $field1,$field2,$field3 FROM $table");
-	if (db_has_rows($result))
-		while ($row = db_fetch_row($result)){
-			$key = md5("$row[0]:$row[1]");
-			$output[$key] = array();
-			$output[$key][$field1] = $row[0];
-			$output[$key][$field2] = $row[1];
-			$output[$key][$field3] = $row[2];
-		}
-	return $output;
-}
-
-// import menus -- this doesn't work yet
-function import_menus($imported,$user_approved,$install_mode){
-
-	global $cfg,$auth;
-	
-	if (!$install_mode)
-		$username = username;
-	else
-		$username = "installer";
-
-	if (!keys_exist_in($imported,array('menus'),'menu import',false))
-		return false;
-	
-	// get needed items
-	$menus = get_import_items('menu_name','menu_id',$cfg['t_menus']);
-	$items = get_keyed_import_items('text','href','item_id',$cfg['t_menu_items']);
-	
-	// setup a table here
-	if (!$user_approved){
-	?><table border="1"><tr style="background:#000000;color:#ffffff"><td>Menu Group Name</td><td>Items</td><td>Insert Group</td></tr><?php
-	}
-	
-	// keys to check
-	$params = array('name','items');
-	$iparams = array('text','href','rank');
-	
-	$query = array();
-	$i = 0;
-	
-	// index to create that links the groups with its keys
-	// FUCK
-	$link_index = array();
-	
-	//	for each menu group
-	foreach($imported['menus'] as $node){
-		$i += 1;
-		
-		// sanity check here
-		if (!keys_exist_in($node,$params,'content array')){
-			echo "<tr><td colspan=\"5\">Row $i failed sanity check!</td></tr>";
-		}else{
-			
-			// for each menu item
-			if (!$user_approved) echo '<tr><td>' . htmlentities($node['name']) . '</td><td><table>';
-			foreach($node['items'] as $n_item){
-
-				$ikey = md5("$n_item[text]:$n_item[href]");
-				
-				if (is_array($n_item) && keys_exist_in($n_item,$iparams,false)){
-					
-					if (!$user_approved){
-					
-						echo '<tr><td>' . htmlentities($n_item['text']) . '</td><td>' . htmlentities($n_item['href']) . '</td><td>';
-						// check to see if item exists already
-						if (!array_key_exists($ikey,$items))
-							echo '<input type="checkbox" name="mappr-' . $ikey . '" value="yes" checked />';
-						else
-							echo '<strong>X</strong>';
-							
-						echo '</td></tr>';
-					}else if(get_post_var("mappr-$ikey") == "yes"){
-					
-						// generate queries
-						//if (!array_key_exists($ikey,$items))
-						
-							// cant generate the same thing twice! there can be duplicate items, sometimes
-							
-							
-					}
-				}
-			}
-			
-			if (!$user_approved){
-				echo '</table></td><td>';
-
-				// add an option if the group doesn't exist
-				if (array_key_exists($node['name'],$menus))
-					echo '<input type="checkbox" name="mgappr-' . md5($node['name']) . '" value="yes" checked /></td></tr>';
-				else
-					echo '<strong>X</strong></td></tr>';
-			}
-				
-			// 
-	//	insert each menu group, and get its menu_id
-	//		put menu_id into an array so we can cross-reference later
-	//	insert each menu item, and get its item_id
-	//		put item_id into an array
-	//	
-		}
-	}
-	
-	if ($user_approved){
-		unset($menus);
-		unset($items);
-		
-		// refresh the menu information
-		$menus = get_import_items('name','menu_id');
-		
-		//	after we make the previous inserts, then cross reference everything and
-		//  create the groups table
-		//		for each menu_group, 
-		//			$insert_id = $items[$groups['item'][0]];
-
-		// this is annoying
-	
-	}else{
-		echo "</table>";
-	}
 }
 
 
 // this function actually does the importing -- query is an array of queries
 function do_import($query,$type){
-	//prn($query);
 	
-	db_begin_transaction();
 	$error = false;
 	foreach($query as $q_str){
 		if ($error == false){
 
 			$result = db_query($q_str);
-			if (!$result){
-				echo "DB Error performing $type import: <pre>" .htmlentities(db_error()) . "</pre>";
-				$error = true;
-				if (!db_rollback_transaction())
-					echo "<p><strong>Warning!</strong> Some changes <em>may</em> have been committed to the database and could not be rolled back!</p>";
-			}
+			if (!db_is_valid_result($result))
+				return db_rollback_transaction("DB Error performing $type import");
 		}
 	}
 	
 	if ($error == false){
-		db_commit_transaction();
 		echo "<p>$type import completed successfully!</p>";
 	}
 	
@@ -537,19 +412,384 @@ function do_import($query,$type){
 }
 
 
-// returns all the rows (associatively) from a query
-function get_all_db_rows($query){
+// import menus
+function import_menus($imported,$user_approved,$install_mode){
 
-	$result_array = array();
+	global $cfg;
+
+	$menus = new import_module('menus','menu',$imported,$install_mode);
 	
-	$result = db_query($query);
-	if (db_has_rows($result))
-		while ($row = db_fetch_assoc($result))
-			$result_array[] = $row;
-	else
-		return false;
-
-	return $result_array;
+	// setup parameters
+	$menus->sql_item_table		= $cfg['t_menu_items'];
+	$menus->sql_item_id			= 'item_id';
+	$menus->sql_item_data		= array('text','href');
+	
+	$menus->sql_join_table		= $cfg['t_menu_groups'];
+	$menus->sql_order_field		= 'rank';
+	
+	$menus->sql_group_table		= $cfg['t_menus'];
+	$menus->sql_group_id		= 'menu_id';
+	$menus->sql_group_name		= 'name';
+	
+	// execute it
+	return $menus->Execute($user_approved);
 }
+
+// import banners
+function import_banners($imported,$user_approved,$install_mode){
+
+	global $cfg;
+	
+	// compatibility
+	if ($imported['export_version'] < 2)
+		return onnac_error("This export file does not support banner exporting correctly! Skipping banners.",
+		get_import_items('name','banner_id',$cfg['t_banners'])
+		);
+
+	$banners = new import_module('banners','banner',$imported,$install_mode);
+	
+	// setup parameters
+	$banners->sql_item_table		= $cfg['t_banner_items'];
+	$banners->sql_item_id			= 'item_id';
+	$banners->sql_item_data			= array('src','alt');
+	
+	$banners->sql_join_table		= $cfg['t_banner_groups'];
+	$banners->sql_order_field		= '';
+	
+	$banners->sql_group_table		= $cfg['t_banners'];
+	$banners->sql_group_id			= 'banner_id';
+	$banners->sql_group_name		= 'name';
+	
+	// execute it
+	return $banners->Execute($user_approved);
+}
+
+
+
+//
+//	import_module
+//
+//	At the moment, this is setup to generically import menus/banners, but
+//	in the future it may be used for more generic purposes.. 
+//
+class import_module {
+
+	// [Mandatory settings]
+	var $type;				// what type of item are we managing? used for naming
+	var $imported;			// imported
+	var $install_mode;		// install mode set? 
+	var $import_key;
+
+	
+// 	[SQL settings]
+//	ITEM_TABLE			JOIN_TABLE			GROUP_TABLE
+//	item_id				item_id				group_id
+//	item_data1			group_id			group_name
+//	item_data2			[order_field]
+//	etc...
+	
+	// names of the fields
+	var $sql_item_table;		// table with items
+	var $sql_item_id;			// item id name
+	var $sql_item_data;			// array of data fields
+	
+	var $sql_join_table;		// table that joins them together
+	var $sql_order_field;		// if there is a field that defines their order, its here
+	
+	var $sql_group_table;		// table with groups
+	var $sql_group_id;			// group id name
+	var $sql_group_name;		// group name fieldname
+	
+	// setup defaults
+	function import_module($import_key,$type,$imported,$install_mode){
+		$this->import_key = $import_key;
+		$this->type = $type;
+		$this->imported = $imported;
+		$this->install_mode = $install_mode;
+	}
+
+	// switches depending on user approval or not
+	function Execute($user_approved){
+				
+		if (!keys_exist_in($this->imported,array($this->import_key),"$this->type import",false))
+			return false;
+				
+		if ($user_approved)
+			return $this->HaveApproval();
+			
+		return $this->GetApproval();
+		
+	}
+	
+	// get approval from the user
+	function GetApproval(){
+		
+		// get needed items
+		$groups = get_import_items($this->sql_group_name,$this->sql_group_id,$this->sql_group_table);
+		$items = $this->get_keyed_import_items($this->sql_item_data,$this->sql_item_table);
+		
+		$item_params = $this->sql_item_data;
+		if ($this->sql_order_field != '')
+			$item_params[] = $this->sql_order_field;
+		
+		$items_exist = false;
+		
+		// calculate this only once
+		$c = count($this->sql_item_data);
+		$i = 0;
+		
+		//	for each group
+		foreach($this->imported[$this->import_key] as $node){
+			$i += 1;
+			
+			// sanity check here
+			if (!keys_exist_in($node, array('name','items'), 'content array')){
+				echo "<tr><td colspan=\"5\">Row $i failed sanity check!</td></tr>";
+			}else{
+				
+				// setup the table here if items exist
+				if (!$items_exist){
+					echo '<table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>' . ucfirst($this->type) . ' Group Name</td><td>Items</td><td>Change Group</td></tr>';
+					$items_exist = true;
+				}
+				
+				// show group name
+				echo '<tr><td>' . htmlentities($node['name']) . '</td><td><table>';	
+				
+				// for each item
+				foreach($node['items'] as $n_item){
+				
+					if (!is_array($n_item) || !keys_exist_in($n_item,$item_params,false)){
+						echo "<tr><td colspan=" . ($c + 1) . "><strong>Invalid item!</strong></td></tr>";
+					}else{
+
+						// create the item key and output the stuff
+						$ikey = '';
+						echo "<tr><td>";
+						
+						for($x = 0;$x < $c; $x++){
+						
+							$t_item = $n_item[$this->sql_item_data[$x]];
+							
+							echo htmlentities($t_item);
+							$ikey .= $t_item;
+							
+							if ($x + 1 < $c)
+								$ikey .= ':';
+							
+							echo "</td><td>";
+						}
+							
+						$ikey = md5($ikey);
+
+						// check to see if the item exists already
+						if (!array_key_exists($ikey,$items)){
+							echo "<input type=\"checkbox\" name=\"$this->type-appr-" . $ikey . '" value="yes" checked />';
+						}else{
+							echo '<strong>X</strong>';
+						}
+							
+						echo '</td></tr>';
+					}
+				}
+				
+				// show the option
+				echo "</table></td><td><input type=\"checkbox\" name=\"$this->type-gappr-" . md5($node['name']) . '" value="yes" checked /></td></tr>';
+					
+				// the group id doesn't really matter when confirming user input, it just needs to be there
+				$groups[$node['name']] = 0;
+			}
+		}
+		
+		echo "</table>";
+		
+		return $groups;
+	}
+	
+	// called when we already have approval, just import the correct data
+	function HaveApproval(){
+		
+		// get needed items
+		$groups = get_import_items($this->sql_group_name,$this->sql_group_id,$this->sql_group_table);
+		$items = $this->get_keyed_import_items($this->sql_item_data,$this->sql_item_table);
+		
+		// figure out what items are already connected
+		$join_table = array();
+		
+		$result = db_query("SELECT a." . implode(',a.', $this->sql_item_data) . ", c.$this->sql_group_name FROM $this->sql_item_table a, $this->sql_join_table b, $this->sql_group_table c WHERE a.$this->sql_item_id = b.$this->sql_item_id AND b.$this->sql_group_id = c.$this->sql_group_id");
+
+		if (!db_is_valid_result($result))
+			return db_rollback_transaction("Could not retrieve $this->type link information.");
+		else if (db_num_rows($result) > 0)
+			while ($row = db_fetch_row($result))
+				$join_table[ md5(implode(':',$row)) ] = true;	
+				
+	
+		// keys to check
+		$item_params = $this->sql_item_data;
+		if ($this->sql_order_field != '')
+			$item_params[] = $this->sql_order_field;
+		
+		$items_exist = false;
+		
+		// calculate this only once
+		$c = count($this->sql_item_data);
+		$i = 0;
+		
+		// index to create that links the groups with its keys
+		$link_index = array();
+		
+		//	for each group
+		foreach($this->imported[$this->import_key] as $node){
+			$i += 1;
+			
+			// setup approval
+			if (get_post_var("$this->type-gappr-" . md5($node['name'])) == "yes" || $this->install_mode)
+				$node_approved = true;
+			else
+				$node_approved = false;
+			
+			// sanity check here
+			if (!keys_exist_in($node, array('name','items'), 'content array')){
+				echo "<tr><td colspan=\"5\">Row $i failed sanity check!</td></tr>";
+			}else{
+				
+				
+				foreach($node['items'] as $n_item){
+					
+					if (!is_array($n_item) || !keys_exist_in($n_item,$item_params,false)){
+						// not serious, dont abort this
+						onnac_error("Skipping invalid $this->type item!");
+					}else{
+						
+						// create the item/node key
+						$ikey = '';
+						
+						for($x = 0;$x < $c; $x++){
+							$ikey .= $n_item[$this->sql_item_data[$x]];
+							if ($x + 1 < $c)
+								$ikey .= ':';
+						}
+						
+						$nkey = md5($ikey . ':' . $node['name']);
+						$ikey = md5($ikey);
+						
+						if($this->install_mode == true || get_post_var("$this->type-appr-$ikey") == "yes"){
+						
+							// if it doesn't exist already, then insert it -- else dont bother!
+							if (!array_key_exists($ikey,$items)){
+						
+								// escape EVERYTHING, we dont need useless errors
+								array_walk($n_item,'db_total_escape');
+								
+								$tn_item = $n_item;
+								if ($this->sql_order_field != '')
+									$tn_item = array_splice($tn_item,0,$c);
+						
+								if (!db_is_valid_result(db_query("INSERT INTO $this->sql_item_table (" . implode(',',$this->sql_item_data) . ") VALUES ('" . implode("','",$tn_item) . "')")))
+									return db_rollback_transaction("Could not insert $this->type item!");
+							
+								$result = db_get_last_id($this->sql_item_table,$this->sql_item_id);
+								if (!db_has_rows($result))
+									return db_rollback_transaction("Could not get last $this->type item ID!");
+							
+								// add the key
+								$row = db_fetch_row($result);
+								$items[$ikey] = $row[0];
+							}
+						}
+						
+						// add to the link_index if exists, and the group has been enabled, and if
+						// the item does not already belong to the group
+						if ($node_approved && array_key_exists($ikey,$items) && !array_key_exists($nkey,$join_table)){
+						
+							//group name, ikey, order field (if it exists)
+							$new_link = array($node['name'],$ikey);
+				
+							// add order field if it exists
+							if ($this->sql_order_field != ''){
+								if (is_numeric($n_item[$this->sql_order_field]))
+									$new_link[] = $n_item[$this->sql_order_field];
+								else
+									return db_rollback_transaction("Error inserting $this->type item! Invalid '$this->sql_order_field' field in import file!");
+							}
+							
+							$link_index[] = $new_link;
+						}
+					}
+				}
+				
+				
+				if ($node_approved && !array_key_exists($node['name'],$groups)){
+				
+					// insert the group
+					if (!db_is_valid_result(db_query("INSERT INTO $this->sql_group_table ($this->sql_group_name) VALUES ('" . db_escape_string($node['name']) . "')")))
+						return db_rollback_transaction("Could not insert $this->type group!");
+				
+					// get last id
+					$result = db_get_last_id($this->sql_group_table,$this->sql_group_id);
+					if (!db_has_rows($result))
+						return db_rollback_transaction("Could not get last $this->type group ID!");
+				
+					// add the id 
+					$row = db_fetch_row($result);
+					$groups[$node['name']] = $row[0];
+				}
+			}
+		}
+			
+		// after we make the previous inserts, then cross reference everything and join the items
+		// to the groups
+		foreach ($link_index as $item){
+			// group_name, ikey, order field
+			if (!array_key_exists($item[0],$groups) || !array_key_exists($item[1],$items))
+				return db_rollback_transaction(ucfirst($this->type) . " $item[0] not found!");
+			
+			$query = "INSERT INTO $this->sql_join_table ($this->sql_group_id,$this->sql_item_id";
+			
+			if ($this->sql_order_field != '')
+				$query .= ",$this->sql_order_field";
+				
+			$query .= ") VALUES (" . $groups[$item[0]] . "," . $items[$item[1]];
+			
+			if ($this->sql_order_field != '')
+				$query .= "," . db_escape_string($item[2]);
+			
+			if (!db_is_valid_result(db_query($query . ')')))
+				return db_rollback_transaction("Error joining $this->type items to group!");
+		
+		}
+		
+		//prn($join_table);
+		//prn($link_index);
+		//prn($groups);
+		//prn($items);
+	
+		echo "<p>" . ucfirst($this->type) . " import completed successfully!</p>";
+
+		return $groups;
+	}
+	
+	// grab information about items into arrays
+	function get_keyed_import_items($fields,$table){
+		
+		$output = array();
+		$c = count($fields);
+		
+		$result = db_query("SELECT " . implode(',',$fields) . ",$this->sql_item_id FROM $table");
+		if (db_has_rows($result))
+			while ($row = db_fetch_row($result)){
+				$id = $row[$c];
+				$row = array_splice($row,0,$c);
+				$output[ md5(implode(':',$row)) ] = $id;
+			}	
+		return $output;
+	}
+}
+
+
+
+
+
 
 ?>

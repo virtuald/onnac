@@ -18,21 +18,22 @@ li{
 padding-bottom: 0.2em;
 }
 
-/* default table settings 
-table{
-border: 0.1em dotted #99ccff;
-margin: 0.5em;
-}
-
-.htable tr:hover{
-background: #cccccc;
-}
-*/
 
 thead{
 background: #000000;
 color: #ffffff;
 }
+
+/* special settings for highlighted tables */
+table.highlighted{
+	width: 100%;
+	border-collapse: collapse;
+}
+
+tr.highlighted{
+	background: #ddddde;
+}
+
 
 /* special items */
 #adm_header{

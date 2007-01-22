@@ -52,15 +52,7 @@ function edurl($error = "no"){
 ?><style>#edurl_hidden{display:none;}</style>
 <script type="text/javascript">
 <!--
-	function toggle_hidden(item){
-		var hidden = document.getElementById(item);
-		
-		if (!hidden.style.display || hidden.style.display == "none")
-			hidden.style.display = "block";
-		else
-			hidden.style.display = "none";
-	}
-	
+
 	function admu_toggle(name){
 		var item = document.getElementById(name);
 		var header = document.getElementById(name + "_hd");
@@ -312,7 +304,7 @@ function edurl_show_list($result,$id,$hide){
 		array_multisort($t_dir,$t_file);
 		
 		// more data to assemble directory tree
-		$t_start = '<table class="adm_url_table">';
+		$t_start = '<table class="highlighted">';
 		
 		$d_tree = array();
 		$directories = array();
@@ -624,16 +616,6 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	
 	echo "document.forms['edurl_editor'].editor_syntax.options[$ix].selected = true;\n";	
 ?>
-	}
-
-	function attachOnload(o,fn){
-		if (o.attachEvent){
-			o.attachEvent('onload', fn);
-		}else if (o.addEventListener){
-			o.addEventListener('load', fn, false);
-		}else{
-			o.onload = fn;
-		}
 	}
 
 	attachOnload(window,ed_load);

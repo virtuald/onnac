@@ -142,58 +142,39 @@ class adm_item{
 		
 ?><script type="text/javascript">
 <!--
-	// copied from http://www.quirksmode.org/js/cookies.html
-	function set_cookie(name,value,days) {
-		if (days) {
-			var date = new Date();
-			date.setTime(date.getTime()+(days*24*60*60*1000));
-			var expires = "; expires="+date.toGMTString();
-		}else 
-			var expires = "";
-		document.cookie = name+"="+value+expires+"; path=/";
-	}
 	
-	function toggle_hidden(item){
-		var hidden = document.getElementById(item);
-		
-		if (!hidden.style.display || hidden.style.display == "none")
-			hidden.style.display = "block";
-		else
-			hidden.style.display = "none";
-	}
+function switch_to(type){
+	var li_items = document.getElementById('adm_item_li');
+	var li_groups = document.getElementById('adm_group_li');
+	var items = document.getElementById('adm_item');
+	var groups = document.getElementById('adm_group');
 	
-	function switch_to(type){
-		var li_items = document.getElementById('adm_item_li');
-		var li_groups = document.getElementById('adm_group_li');
-		var items = document.getElementById('adm_item');
-		var groups = document.getElementById('adm_group');
-		
-		if(type == 'groups' ){
-			items.style.display = 'none';
-			m_unhighlight(li_items);
-			groups.style.display = 'block';
-			m_highlight(li_groups);
-			set_cookie('d_<?php echo $this->type; ?>','g');
-		}else{
-			items.style.display = 'block';
-			m_highlight(li_items);
-			groups.style.display = 'none';
-			m_unhighlight(li_groups);
-			set_cookie('d_<?php echo $this->type; ?>','i');
-		}
+	if(type == 'groups' ){
+		items.style.display = 'none';
+		m_unhighlight(li_items);
+		groups.style.display = 'block';
+		m_highlight(li_groups);
+		set_cookie('d_<?php echo $this->type; ?>','g');
+	}else{
+		items.style.display = 'block';
+		m_highlight(li_items);
+		groups.style.display = 'none';
+		m_unhighlight(li_groups);
+		set_cookie('d_<?php echo $this->type; ?>','i');
 	}
-	
-	function m_highlight(item){
-		item.firstChild.style.color = '#000000';
-		item.firstChild.style.backgroundColor = '#aaaaaa';
-		item.firstChild.style.border = '1px dotted #000000';
-	}
-	
-	function m_unhighlight(item){
-		item.firstChild.style.color = '#000000';
-		item.firstChild.style.backgroundColor = '#eeeeee';
-		item.firstChild.style.border = '';
-	}
+}
+
+function m_highlight(item){
+	item.firstChild.style.color = '#000000';
+	item.firstChild.style.backgroundColor = '#aaaaaa';
+	item.firstChild.style.border = '1px dotted #000000';
+}
+
+function m_unhighlight(item){
+	item.firstChild.style.color = '#000000';
+	item.firstChild.style.backgroundColor = '#eeeeee';
+	item.firstChild.style.border = '';
+}
 	
 //--></script><?php
 		
@@ -285,13 +266,13 @@ class adm_item{
 			else
 				$other_type = 'item';
 				
-			echo '<table><thead><tr><td>';
+			echo '<table class="highlighted"><thead><tr><td>';
 			if ($type == 'item')
 				echo implode('</td><td>',$desc) . '<td>Groups</td>';
 			else
 				echo 'Group Name</td><td>' . implode(', ',$desc) . '</td>';
 				
-			echo '<td>&nbsp;</td></tr></thead>';
+			echo '<td>&nbsp;</td></tr></thead><tbody>';
 		
 			$last_this = array();
 			$last_id = 0;
@@ -366,7 +347,7 @@ class adm_item{
 					$last_this = $group_name;
 			}
 			
-			echo "</table></td><td>";
+			echo "</tbody></table></td><td>";
 			
 			if ($type == 'group')
 				echo "<a href=\"$this->url&amp;group_id=$last_id&amp;item_id=$other_id&amp;action=additem\">[Add $this->type]</a> ";
@@ -729,18 +710,13 @@ class adm_item{
 		// execute SQL statement
 		$result = db_query($query);
 		
-		if (!db_is_valid_result($result)){
-			onnac_error("Action canceled.");
-			db_rollback_transaction();
-			return;
-		}
+		if (!db_is_valid_result($result))
+			return db_rollback_transaction("Action canceled.");
 		
-		if (!$is_new && !$this->update_content($id,$is_item)){
-			onnac_error("Error occured updating affected content!");
-			if (!db_rollback_transaction())
-				onnac_error( "Some changes could not be reversed.");
-			return;
-		}
+		
+		if (!$is_new && !$this->update_content($id,$is_item))
+			return db_rollback_transaction("Error occured updating affected content!");
+		
 		
 		if (db_is_valid_result(db_commit_transaction()))
 			if ($is_new)
@@ -801,11 +777,9 @@ class adm_item{
 		// part one -- delete the item
 		$result = db_query("DELETE FROM $sql_table WHERE $sql_id = '$id'");
 		
-		if (!db_is_valid_result($result) || db_affected_rows($result) != 1 ){
-			db_rollback_transaction();
-			onnac_error("Error deleting $this->type$grp_text!");
-			return;
-		}
+		if (!db_is_valid_result($result) || db_affected_rows($result) != 1 )
+			return db_rollback_transaction("Error deleting $this->type$grp_text!");
+
 		
 		if (!$this->update_content($id,$is_item))
 			if (db_rollback_transaction())
@@ -815,23 +789,20 @@ class adm_item{
 
 		$affected = false;
 
-		// delete the group references to the item
-		if ($is_item){
+		// delete the references to the item
+		$result = db_query("DELETE FROM $this->sql_join_table WHERE $sql_id = '$id'");
 		
-			$result = db_query("DELETE FROM $this->sql_join_table WHERE $this->sql_item_id = '$id'");
-			
-			if (!db_is_valid_result($result)){
-				if (db_rollback_transaction())
-					onnac_error("$this->type not deleted.");
-				else
-					onnac_error("$this->type partially deleted!");	 // uh-oh.. 
-					
-				return;
-			}
-			
-			if (db_affected_rows($result) > 0)
-				$affected = true;
+		if (!db_is_valid_result($result)){
+			if (db_rollback_transaction())
+				onnac_error("$this->type not deleted.");
+			else
+				onnac_error("$this->type partially deleted!");	 // uh-oh.. 
+				
+			return;
 		}
+		
+		if (db_affected_rows($result) > 0)
+			$affected = true;
 		
 		if (db_is_valid_result(db_commit_transaction())){
 		

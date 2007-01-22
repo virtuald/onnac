@@ -222,16 +222,6 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 ?>
 	}
 
-	function attachOnload(o,fn){
-		if (o.attachEvent){
-			o.attachEvent('onload', fn);
-		}else if (o.addEventListener){
-			o.addEventListener('load', fn, false);
-		}else{
-			o.onload = fn;
-		}
-	}
-
 	attachOnload(window,ed_load);
 
 	function formSubmit(){

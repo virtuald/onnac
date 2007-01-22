@@ -32,6 +32,7 @@
 	
 */
 
+require_once('../../include/default.inc.php');
 require_once('../../include/util.inc.php');
 
 // array of files/filenames to be installed
@@ -102,8 +103,11 @@ $output['menus'] = array();
 
 $output['dumptype'] = 'content';
 $output['export_date'] = date('r');
-$output['export_version'] = 1;
+$output['export_version'] = 2;
 $output['export_description'] = "Onnac installation file";
+
+global $cfg;
+$output['onnac_version'] = $cfg['onnac_version'];
 
 
 // Now, send the export data to the output

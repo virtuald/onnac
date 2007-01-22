@@ -98,13 +98,9 @@ function menu_autofill(){
 		
 		while($row = db_fetch_row($result)){
 		
-			if (!db_is_valid_result(db_query("INSERT INTO $cfg[t_menu_items] (text, href) VALUES ('" . db_escape_string($row[0]) . "', '##rootdir##" . db_escape_string($row[1]) . "')"))){
-				onnac_error("Error adding menu item!");
-				if (!db_rollback_transaction())
-					onnac_error("Error rolling back transaction. Some items may have already been added!");
-				return;
-			}
-			
+			if (!db_is_valid_result(db_query("INSERT INTO $cfg[t_menu_items] (text, href) VALUES ('" . db_escape_string($row[0]) . "', '##rootdir##" . db_escape_string($row[1]) . "')")))
+				return db_rollback_transaction("Error adding menu item!");
+
 			$count++;
 		}
 		

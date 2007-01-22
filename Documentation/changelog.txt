@@ -1,3 +1,14 @@
+0.0.9.0 (in process)
+---------------------
+	- Import/Export support is complete
+	- Fixed: adm_item now removes group references when deleting a group
+	- Import: Improved transactional support
+	- Moved some javascript functions to admin.js, changed admin template
+	- Added default settings file, and made some configuration directives optional
+	- BREAKING CHANGE: Old export version is broken, did not export banners correctly
+		-- Upped 'export_version' to 2
+		-- Added 'onnac_version' to export file
+
 0.0.8.5 (1/16/2007)
 ------------------
 	- Security fix: XSS vulnerability

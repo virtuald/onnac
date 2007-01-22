@@ -181,7 +181,7 @@ function get_menu_array(){
 
 	$result = db_query("SELECT name,menu_id FROM $cfg[t_menus]");
 	$menus = array();
-	if ($result){
+	if (db_is_valid_result($result)){
 		// make arrays
 		while ($row = db_fetch_row($result)){
 			$m_info = array();
@@ -198,7 +198,7 @@ function get_menu_array(){
 			$menus[] = $m_info;
 		}
 	}else{
-		echo "<h4>Export Data</h4><p>Error retrieving menus!</p><pre>" . db_error() . "</pre>";
+		echo "<h4>Export Data</h4><p>Error retrieving menus!</p>";
 		return false;
 	}
 
@@ -214,22 +214,27 @@ function get_banner_array(){
 
 	$result = db_query("SELECT name,banner_id FROM $cfg[t_banners]");
 	$banners = array();
-	if ($result){
+	if (db_is_valid_result($result)){
 		// make arrays
 		while ($row = db_fetch_row($result)){
-			$banners[$row[0]] = array();
+			$m_info = array();
+			$m_info['name'] = $row[0];
+			$m_info['items'] = array();
+			
 			// get items
 			$m_result = db_query("SELECT a.src, a.alt FROM $cfg[t_banner_items] a, $cfg[t_banner_groups] b WHERE b.banner_id = $row[1] AND a.item_id = b.item_id");
 			
 			if ($m_result && db_num_rows($m_result) > 0)
 				while ($m_row = db_fetch_assoc($m_result))
-					$banners[$row[0]][] = $m_row;
+					$m_info['items'][] = $m_row;
+					
+			$banners[] = $m_info;
 		}
 	}else{
-		echo "<h4>Export Data</h4><p>Error retrieving banners!</p><pre>" . db_error() . "</pre>";
+		echo "<h4>Export Data</h4><p>Error retrieving banners!</p>";
 		return false;
 	}
-	
+
 	return $banners;
 }
 
@@ -241,12 +246,13 @@ function do_export($type,$output){
 	global $cfg;
 	
 	// serialize it and output it
-	$output['dumptype'] = $type;
-	$output['export_date'] = date('r');
-	$output['export_version'] = 1;
+	$output['dumptype'] = 			$type;
+	$output['export_date'] = 		date('r');
+	$output['export_version'] = 	2;
 	$output['export_description'] = get_post_var('export_description');
+	$output['onnac_version'] = 		$cfg['onnac_version'];
 	
-	// show output array structure
+	// show output array structure, if you really want to know
 	//echo "<pre>";
 	//print_r($output);
 	//echo "</pre>";
