@@ -120,7 +120,7 @@ function render_page($input_url, $error_url = 0){
 	$content = db_fetch_row($result);
 	
 	if (!$content)
-		show_internal_error("Could not retrieve content. Please try again.");
+		return show_internal_error("Could not retrieve content. Please try again.");
 		
 	$render['banner'] = "";
 	$render['menu'] = "";
@@ -199,7 +199,7 @@ function render_page($input_url, $error_url = 0){
 */
 function show_internal_error($msg){
 
-	header("HTTP/1.x 500 Internal server error");
+	if (!headers_sent()) header("HTTP/1.x 500 Internal server error");
 	echo "<html><title>Server Error</title><body>Internal server error:<p>$msg<p>Please try to access the content again, or try a different method to get here.</body></html>";
 	
 }

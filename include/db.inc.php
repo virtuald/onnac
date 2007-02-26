@@ -79,11 +79,12 @@ function db_close($link = null){
 	}
 }
 
-function db_query($query){
+// additional parameter for installer
+function db_query($query, $nowdebug = false){
 
 	global $cfg;
 	
-	if ($cfg['debug'] == true)
+	if ($cfg['debug'] == true || $nowdebug == true)
 		$cfg['db_last_sql_query'] = $query;
 	
 	switch($cfg['db_type']){

@@ -194,9 +194,9 @@ $q_content =
 	menu_id 		integer NOT NULL default '-1',
 	visited_count 	integer NOT NULL default '0',
 	page_content 	text NOT NULL,
-	last_update 	timestamp NOT NULL default 'NOW()',
-	other_update	timestamp NOT NULL default 'NOW()',
-	last_visit 		timestamp NOT NULL default 'NOW()',
+	last_update 	timestamp NOT NULL default NOW(),
+	other_update	timestamp NOT NULL,
+	last_visit 		timestamp NOT NULL,
 	last_update_by 	varchar(255) NOT NULL
 )";
 
@@ -310,8 +310,8 @@ $q_errors =
 	if ($validated) echo "success!</p><p>Creating indexes...";
 	foreach($indexes as $query){
 		if ($validated){
-			if (!db_query($query)){
-				echo "error.</p>";
+			if (!db_is_valid_result(db_query($query,true))){
+				echo "</p>";
 				db_rollback_transaction();
 				$validated = 0;
 			}
@@ -324,24 +324,24 @@ $q_errors =
 	if ($validated){
 		echo "success!</p><p>Creating admin user...";
 		
-		$result = db_query("INSERT INTO " . $db_prefix . "users (username,hash,description) VALUES ('" . db_escape_string($username) . "','" . md5(db_escape_string($username) . ':' . db_escape_string($password)) . "','Administrator')");
+		$result = db_query("INSERT INTO " . $db_prefix . "users (username,hash,description) VALUES ('" . db_escape_string($username) . "','" . md5(db_escape_string($username) . ':' . db_escape_string($password)) . "','Administrator')",true);
 		
-		if (!$result || db_affected_rows($result) < 1){
+		if (!db_is_valid_result($result) || db_affected_rows($result) < 1){
 			$validated = 0;
 			db_rollback_transaction();
-			echo "error.</p>";
+			echo "</p>";
 		}else{
 			// get index of user id
 			// 		in some conditions, this MAY fail on postgre.. hopefully it fails now, instead
 			//		of later on when they use onnac... so we can fix it :)
 			$result = db_get_last_id($db_prefix . "users",'user_id');
-			if ($result && db_num_rows($result) > 0){
+			if (db_has_rows($result)){
 				$row = db_fetch_row($result);
 				$default_user_id = $row[0];
 			}else{
 				$validated = 0;
 				db_rollback_transaction();
-				echo "error.</p>";
+				echo "</p>";
 			}
 		}
 	}
@@ -350,23 +350,23 @@ $q_errors =
 	if ($validated){
 		echo "success!<br/>Creating admin group...";
 		
-		$result = db_query("INSERT INTO " . $db_prefix . "user_group_names (group_name) VALUES ('root')");
-		if (!$result || db_affected_rows($result) < 1){
+		$result = db_query("INSERT INTO " . $db_prefix . "user_group_names (group_name) VALUES ('root')",true);
+		if (!db_is_valid_result($result) || db_affected_rows($result) < 1){
 			$validated = 0;
 			db_rollback_transaction();
-			echo "error.</p>";
+			echo "</p>";
 		}else{
 			// get index of group
 			// 		in some conditions, this MAY fail on postgre.. hopefully it fails now, instead
 			//		of later on when they use onnac... so we can fix it :)
 			$result = db_get_last_id($db_prefix . "user_group_names",'group_id');
-			if ($result && db_num_rows($result) > 0){
+			if (db_has_rows($result)){
 				$row = db_fetch_row($result);
 				$default_group_id = $row[0];
 			}else{
 				$validated = 0;
 				db_rollback_transaction();
-				echo "error.</p>";
+				echo "</p>";
 			}
 		}
 	}
@@ -375,12 +375,12 @@ $q_errors =
 	if ($validated){
 		echo "success!<br/>Joining admin group...";
 		
-		$result = db_query("INSERT INTO " . $db_prefix . "user_groups (user_id,group_id) VALUES ($default_user_id,$default_group_id)");
+		$result = db_query("INSERT INTO " . $db_prefix . "user_groups (user_id,group_id) VALUES ($default_user_id,$default_group_id)",true);
 		
-		if (!$result || db_affected_rows($result) < 1){
+		if (!db_is_valid_result($result) || db_affected_rows($result) < 1){
 			$validated = 0;
 			db_rollback_transaction();
-			echo "error.</p>";
+			echo "</p>";
 		}
 	}
 	
@@ -502,9 +502,10 @@ $q_errors =
 		$success = 1;
 	}
 	
-	if (!$validated && $is_sql_error){
-		echo "<h4>SQL Error Message:</h4><pre>" . htmlentities(db_error()) . "</pre>";
-	}
+	// no longer needed, and doesn't work anyways if the transaction gets rolled back!
+	//if (!$validated && $is_sql_error){
+	//	echo "<h4>SQL Error Message:</h4><pre>" . htmlentities(db_error()) . "</pre>";
+	//}
 }
 
 if (!$success){
@@ -577,8 +578,8 @@ function install_db_create($validated,$query,$db_prefix,$table_suffix){
 		$cfg["t_" . $table_suffix] = $db_prefix . $table_suffix;
 	
 		echo "success!<br/>Creating " . $db_prefix . $table_suffix . "... ";
-		if (!db_query($query)){
-			echo "error.</p>";
+		if (!db_is_valid_result(db_query($query,true))){
+			echo "</p>";
 			db_rollback_transaction();
 			$validated = 0;
 		}

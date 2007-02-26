@@ -50,6 +50,12 @@ if (get_magic_quotes_gpc()) {
    $_REQUEST = array_map('stripslashes_deep', $_REQUEST);
 }
 
+// include this first
+require_once ("./include/render.inc.php");		// rendering engine
+
+// use output buffering to allow us to output headers whenever needed, and to set Content-Length, among other things
+// (e.g... we can be really lazy :) )
+ob_start("output_callback");
 
 unset($cfg);
 require_once("./include/default.inc.php");
@@ -60,20 +66,16 @@ if ((@include './include/config.inc.php') != 1){
 }
 
 require_once ("./include/db.inc.php");			// wrapper functions for db
-require_once ("./include/render.inc.php");		// rendering engine
 
 // detect whether mod_rewrite was enabled correctly!
 if (!isset($_GET['url'])){
 
 	show_internal_error("Error #00: mod_rewrite is not enabled! Onnac does not work correctly unless mod_rewrite or its equivalent is enabled.");
+	
+	ob_end_flush();
 	die;
 }
 
-$input_url = $_GET['url'];
-
-// use output buffering to allow us to output headers whenever needed, and to set Content-Length, among other things
-// (e.g... we can be really lazy :) )
-ob_start("output_callback");
 
 // Lets make a connection to the database here
 $dbCon = db_connect($cfg['db_host'],$cfg['db_user'],$cfg['db_pass'],$cfg['db_name']);
@@ -83,6 +85,8 @@ if (!$dbCon){
 	show_internal_error("Error #01: The server is temporarily unavailable. Please visit later. Thanks!");
 
 }else{
+
+	$input_url = $_GET['url'];
 
 	// add support for SSL here
 	if ($cfg['use_ssl'] && isset($_SERVER['HTTPS']))
