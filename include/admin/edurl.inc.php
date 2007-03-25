@@ -485,6 +485,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	
 ?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
 <script type="text/javascript" src="##pageroot##/FCKeditor/fckeditor.js"></script>
+<script type="text/javascript" src="##pageroot##/codepress/codepress.js"></script>
 <script type="text/javascript"><!--
 
 	var curEditor = '';
@@ -498,7 +499,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				
 			case "cp":
 				if (cpLoaded)
-					return document.getElementById('codepress').contentWindow.CodePress.getCode();
+					return cp.getCode();
 				break;
 			default:
 				return initialCode;
@@ -510,7 +511,6 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	function setCode(text) {
 		
 		var oElement = document.forms['edurl_editor'].editor_syntax;
-		lang = oElement.options[oElement.selectedIndex].value;
 		
 		switch (curEditor){
 			case "fck":
@@ -518,7 +518,8 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				break;
 				
 			case "cp":
-				document.getElementById('codepress').contentWindow.CodePress.setCode(lang,text);
+				var lang = oElement.options[oElement.selectedIndex].value;
+				cp.setCode(text);
 				break;
 		}
 	}
@@ -532,24 +533,27 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		if (newEditor == curEditor || newEditor == "")
 			return;
 		
-		var cp = document.getElementById("div_codepress");
+		var cpe = document.getElementById("div_codepress");
 		var fck = document.getElementById("div_fckedit");
+		var oElement = document.forms['edurl_editor'].editor_syntax;
 		
 		switch (newEditor){
 			case "cp":
-				cp.style.display = 'block';
+				cpe.style.display = 'block';
 				fck.style.display = 'none';
 				if (!cpLoaded){
+					
+					var cpi = document.getElementById('cp_container');
+					cpi.innerHTML = '<text' + 'area id="cp" class="codepress ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</textarea>';
+					CodePress.run();
 					cpLoaded = true;
-					var cpi = document.getElementById('codepress');
-					cpi.src = "##pageroot##/codepress/editor.html";
-					attachOnload(cpi, cp_load);
+					//cp_load();
 					return;
 				}
 				break;
 			case "fck":
 				fck.style.display = 'block';
-				cp.style.display = 'none';
+				cpe.style.display = 'none';
 				break;
 		}
 		
@@ -680,16 +684,16 @@ Menu ID <?php
 			<option value="php">PHP</option>
 			<option value="text">Plain Text</option>
 		</select></p>
-		<iframe id="codepress"></iframe>
+		<div id="cp_container"></div>
 		<br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
 	</div>
 
 	<div id="div_fckedit" style="display: none">
 		<script type="text/javascript">
-		  var oFCKeditor = new FCKeditor('FCKeditor');
-		  oFCKeditor.BasePath = "##pageroot##/FCKeditor/";
-		  oFCKeditor.Height = "450";
-		  oFCKeditor.Create();
+			var oFCKeditor = new FCKeditor('FCKeditor');
+			oFCKeditor.BasePath = "##pageroot##/FCKeditor/";
+			oFCKeditor.Height = "450";
+			oFCKeditor.Create();
 		</script>
 		<br/><a href="javascript:revert_text();">Revert Current Changes</a>
 	</div>

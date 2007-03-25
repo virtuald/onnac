@@ -57,7 +57,7 @@ eventually change, probably.
 
 The administrative software uses the Codepress javascript syntax highlighter
 and editor. It is released under an LGPL license, and you may find out more
-information about this package at http://codepress.fermads.net/ It also uses
+information about this package at http://codepress.net/ It also uses
 the FCKeditor for a WYSIWYG editing interface. It is also released under an
 LGPL license, and you may obtain more information about it at 
 http://www.fckeditor.net

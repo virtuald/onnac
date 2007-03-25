@@ -71,10 +71,15 @@ The recommended upgrade procedure will probably go something like this. :)
 a) Use the 'Import' function to import the install.osf file from 
 ./install/default/ directory. Make sure you only overwrite the administrative
 template and interface file, and if you still have the default error pages, those too. 
+
 b) Copy new distribution files over old files
 	-- index.php and /include/*.php first, see if it works
-	-- /include/admin/* next
-	-- /interface/* next
+	
+Next, delete the following directories
+	-- /include/admin/*
+	-- /interface/*
+	
+	Then, copy the new files in /include/admin/ and /interface over
 	You should NOT copy the install directory over, it is not needed.
 	
 In general, if it doesn't work then there are a few specific things that could have
