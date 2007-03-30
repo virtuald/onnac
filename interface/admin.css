@@ -1,27 +1,27 @@
 /* body style */
 body{
-font-family: Arial, Helvetica, sans-serif;
-font-size: 0.8em;
-list-style-type: circle;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.8em;
+	list-style-type: circle;
 }
 
 a{
-text-decoration: none;
+	text-decoration: none;
 }
 
 a:hover{
-color: #ff0000;
+	color: #ff0000;
 }
 
 /* list style */
 li{
-padding-bottom: 0.2em;
+	padding-bottom: 0.2em;
 }
 
 
 thead{
-background: #000000;
-color: #ffffff;
+	background: #000000;
+	color: #ffffff;
 }
 
 /* special settings for highlighted tables */
@@ -44,7 +44,7 @@ font-size: 1.5em;
 }
 
 #adm_body{
-width: 800px;
+width: 78%;
 margin: 0 auto;
 }
 

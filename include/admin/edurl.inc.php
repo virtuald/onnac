@@ -519,7 +519,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				
 			case "cp":
 				var lang = oElement.options[oElement.selectedIndex].value;
-				cp.setCode(text);
+				cp.setCode(text,lang);
 				break;
 		}
 	}
@@ -542,12 +542,11 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				cpe.style.display = 'block';
 				fck.style.display = 'none';
 				if (!cpLoaded){
-					
 					var cpi = document.getElementById('cp_container');
 					cpi.innerHTML = '<text' + 'area id="cp" class="codepress ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</textarea>';
 					CodePress.run();
 					cpLoaded = true;
-					//cp_load();
+					curEditor = 'cp';
 					return;
 				}
 				break;
@@ -561,18 +560,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		curEditor = newEditor;
 		setCode(code);
 	}
-	
-	// fires upon codepress iframe loading
-	function cp_load(){
-		var code = '';
-		if (curEditor != '')
-			code = getCode();
-		else
-			code = initialCode;
-		
-		curEditor = 'cp';
-		setCode(code);
-	}
+
 	
 	// revert editor contents
 	function revert_text(){

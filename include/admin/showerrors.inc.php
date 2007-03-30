@@ -73,7 +73,7 @@ function showerrors(){
 		echo "<a href=\"##pageroot##/?mode=showerrors&amp;clear=all\">Clear all 404 errors</a><p><table border=\"1\"><thead><tr><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=url&amp;by=$by\">URL</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=referer&by=$by\">Referer</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=ip&amp;by=$by\">IP</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=time&amp;by=$by\">Time</a></strong></td><td>&nbsp;</td></tr></thead>";
 		
 		while($row = db_fetch_row($result))
-			echo "<tr><td>" . htmlentities($row[0]) . "</td><td>" . htmlentities($row[1]) . "</td><td>$row[2]</td><td>" . date("F j, Y, g:i a",$row[3]) . "</td><td><a href=\"##pageroot##/?mode=showerrors&clear=$row[4]\">Remove</a></td></tr>";
+			echo "<tr><td>" . htmlentities($row[0]) . "</td><td>" . htmlentities($row[1]) . "</td><td>$row[2]</td><td>" . date("F j, Y, g:i a",$row[3]) . "</td><td><a href=\"##pageroot##/?mode=showerrors&amp;clear=$row[4]\">Remove</a></td></tr>";
 			
 		echo "</table>";
 	}else{

@@ -215,11 +215,18 @@ CodePress = {
 	// put code inside editor
 	setCode : function() {
 		var code = arguments[0];
+		var lang = arguments[1];
+		if (typeof(lang) != 'undefined'){
+			document.getElementById('cp-lang-style').href = 'languages/' + lang + '.css';
+			document.getElementById('cp-lang-script').src = 'languages/' + lang + '.js';
+		}
 		code = code.replace(/\u2009/gi,'');
 		code = code.replace(/&/gi,'&amp;');		
        	code = code.replace(/</g,'&lt;');
         code = code.replace(/>/g,'&gt;');
 		editor.innerHTML = '<pre>'+code+'</pre>';
+		
+		CodePress.syntaxHighlight('init');
 	},
 
 	

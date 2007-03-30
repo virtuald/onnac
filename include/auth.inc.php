@@ -135,7 +135,7 @@ class authentication {
 		
 		// debug
 		if ($this->auth_debug){
-			echo "<pre>";
+			echo "<strong>WARNING:</strong> Authentication debugging enabled!<br/><pre>";
 			print_r($_POST);
 			print_r($_SESSION);
 			print_r($_COOKIE);
@@ -143,10 +143,22 @@ class authentication {
 		}
 		
 		// authentication
-		if ($username != "" && $key != "" && $expires != 0){
+		if ($username == "" || $key == "" || $expires == 0){
 			
-			// determine if this has expired or not
-			if ($expires >= time() + $cfg['login_expires'] || $expires <= time()){
+			if ($this->auth_debug){
+				echo "Auth failure point: Expected a username (" . htmlentities($username) . ") and key (" . htmlentities($key) . ") and expires (" . htmlentities($expires) . ") to be not zero!<br/>";
+			}
+			
+		}else{
+			
+			// determine if this has expired or not (there is also a 5-second grace period, otherwise
+			// really quick refreshes of pages will break!)
+			if ($expires >= (time() + $cfg['login_expires'] + 5) || $expires <= time()){
+			
+				if ($this->auth_debug){
+					echo "Auth failure point: expires (" . htmlentities($expires) . ") >= time + login_expires + 5 (" . (time() + $cfg['login_expires'] + 5) . ") || expires <= time (" . time() . ")<br/>"; 
+				}
+			
 				$this->expired = true;
 				$this->login_message = "Login expired. You must login to access this area.";
 				$_SESSION['key'] = "";			// remove password from session

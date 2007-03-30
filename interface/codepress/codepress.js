@@ -46,8 +46,8 @@ CodePress = function(obj) {
 		return self.textarea.disabled ? self.editor.getCode() : self.textarea.value;
 	}
 
-	self.setCode = function(code) {
-		self.textarea.disabled ? self.editor.setCode(code) : self.textarea.value = code;
+	self.setCode = function(code,lang) {
+		self.textarea.disabled ? self.editor.setCode(code,lang) : self.textarea.value = code;
 	}
 	
 	self.toogleLinenumbers = function() {

@@ -1,18 +1,21 @@
-0.0.9.0 (in process)
+0.0.9.0 (3/30/2007)
 ---------------------
-	- Fixed MySQL 5.x errors in install script
-	- Improved output buffering
-	- Changed install script to have verbose SQL errors
-	- Existing install script error detection wasn't working correctly
-	when transactions were enabled. Fixed.
-	- Import/Export support is complete
+	- Fixed: MySQL 5.x errors in install script
 	- Fixed: adm_item now removes group references when deleting a group
-	- Import: Improved transactional support
-	- Moved some javascript functions to admin.js, changed admin template
-	- Added default settings file, and made some configuration directives optional
-	- BREAKING CHANGE: Old export version is broken, did not export banners correctly
+	- Fixed: Existing install script error detection wasn't working correctly
+	when transactions were enabled.
+	- Fixed: Authentication would break if you immediately reloaded a page
+	- Fixed: BREAKING CHANGE: Old export version is broken, did not export banners correctly
 		-- Upped 'export_version' to 2
 		-- Added 'onnac_version' to export file
+	- Import: Improved transactional support
+	- Improved output buffering
+	- Changed install script to have verbose SQL errors
+	- Import/Export support is complete
+	- Moved some javascript functions to admin.js, changed admin template
+	- Added default settings file, and made some configuration directives optional
+	- Upgraded to Codepress v0.9.2 (SVN)
+		- Made changes to codepress files, see cp-setLanguage.patch in codepress directory
 
 0.0.8.5 (1/16/2007)
 ------------------

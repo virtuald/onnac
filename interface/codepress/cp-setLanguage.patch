@@ -1,0 +1,169 @@
+Index: codepress.html
+===================================================================
+--- codepress.html	(revision 157)
++++ codepress.html	(working copy)
+@@ -7,40 +7,29 @@
+ 	<script type="text/javascript">
+ 	var L=location.href;
+ 	var d=L.substring(L.indexOf("?")+1);
+-	var c=v=new Array(); c=d.split("&");
+-	for(i=0;i<c.length&&c.length>0;i++) {
+-	v=c[i].split("="); if(v.length>1)
+-	eval(v[0]+"=unescape('"+v[1].replace(/\+/g," ")+"')");} 
++	var c=new Array(); 
++	c=d.split(":");
+ 	
++	if (c.length<=0)
++		exit;
++	
++	var language = c[0];
++	var engine = c[1];
++	
+ 	if(language==null||language=='') language = 'generic';
+ 	
+ 	ts = (new Date).getTime(); // timestamp to avoid cache
+-	document.write('<link type="text/css" href="codepress.css?ts='+ts+'" rel="stylesheet" />');
+-	document.write('<link type="text/css" href="languages/'+language+'.css?ts='+ts+'" rel="stylesheet" id="cp-lang-style" />');
+-	document.write('<scr'+'ipt type="text/javascript" src="engines/'+engine+'.js?ts='+ts+'"></scr'+'ipt>');
+-	document.write('<scr'+'ipt type="text/javascript" src="languages/'+language+'.js?ts='+ts+'"></scr'+'ipt>');
++	document.write('<link type="text/css" href="codepress.css?ts='+encodeURI(ts)+'" rel="stylesheet" />');
++	document.write('<link type="text/css" href="languages/'+encodeURI(language)+'.css?ts='+encodeURI(ts)+'" rel="stylesheet" id="cp-lang-style" />');
++	document.write('<scr'+'ipt type="text/javascript" src="engines/'+encodeURI(engine)+'.js?ts='+encodeURI(ts)+'"></scr'+'ipt>');
++	document.write('<scr'+'ipt type="text/javascript" src="languages/'+encodeURI(language)+'.js?ts='+encodeURI(ts)+'" id="cp-lang-script"></scr'+'ipt>');
+ 	</script>
+-<style>
+-input {
+-	position:absolute;
+-	top:0;
+-	left:0;
+-	background:yellow;
+-	text-align:right;
+-	border:0;
+-	margin:0;
+-	width:30px;
+-	padding:13px 0;
+-	white-space:pre;
+-	font-family:monospace;
+-}
+-</style>
+-	
++
+ </head>
+ 
+ <script type="text/javascript">
+-if (engine == "gecko") document.write('<body><code></code></body>');
+-else if(engine == "msie") document.write('<body><pre></pre><input type="button" disabled="disabled" /></body>');
++if (engine == "gecko") document.write('<body id="code"> </body>');
++else if(engine == "msie") document.write('<body><pre id="code"></pre></body>');
+ </script>
+ 
+ </html>
+Index: codepress.js
+===================================================================
+--- codepress.js	(revision 157)
++++ codepress.js	(working copy)
+@@ -37,7 +37,7 @@
+ 		if(!self.textarea.disabled) return;
+ 		self.language = (language) ? language : self.textarea.className.replace(/ ?codepress ?/,'');
+ 		if(!CodePress.languages[self.language]) self.language = 'generic';
+-		self.src = CodePress.path+'codepress.html?engine='+CodePress.engine+'&language='+self.language+'&ts='+(new Date).getTime();
++		self.src = CodePress.path+'codepress.html?'+self.language+':'+CodePress.engine+':'+(new Date).getTime();
+ 		if(self.attachEvent) self.attachEvent('onload',self.initialize);
+ 		else self.addEventListener('load',self.initialize,false);
+ 	}
+@@ -46,8 +46,8 @@
+ 		return self.textarea.disabled ? self.editor.getCode() : self.textarea.value;
+ 	}
+ 
+-	self.setCode = function(code) {
+-		self.textarea.disabled ? self.editor.setCode(code) : self.textarea.value = code;
++	self.setCode = function(code,lang) {
++		self.textarea.disabled ? self.editor.setCode(code,lang) : self.textarea.value = code;
+ 	}
+ 	
+ 	self.toogleLinenumbers = function() {
+Index: engines/gecko.js
+===================================================================
+--- engines/gecko.js	(revision 157)
++++ engines/gecko.js	(working copy)
+@@ -23,13 +23,12 @@
+ 		if(typeof(editor)=='undefined'&&!arguments[0]) return;
+ 		chars = '|32|46|62|'; // charcodes that trigger syntax highlighting
+ 		cc = '\u2009'; // control char
+-		editor = document.getElementsByTagName('code')[0];
+-//		editor.lines = document.getElementsByTagName('input')[0];
++		editor = document.getElementById('code');
+ 		document.designMode = 'on';
+ 		document.addEventListener('keypress', this.keyHandler, true);
+ 		window.addEventListener('scroll', function() { if(!CodePress.scrolling) CodePress.syntaxHighlight('scroll') }, false);
+ 		completeChars = this.getCompleteChars();
+-		//CodePress.syntaxHighlight('init');
++		CodePress.syntaxHighlight('init');
+ 	},
+ 
+ 	// treat key bindings
+@@ -92,7 +91,6 @@
+ 		o = editor.innerHTML;
+ 		o = o.replace(/<br>/g,'\n');
+ 		o = o.replace(/<.*?>/g,'');
+-//		editor.lines.value = this.getLineNumbers();
+ 		x = z = this.split(o,flag);
+ 		x = x.replace(/\n/g,'<br>');
+ 
+@@ -111,13 +109,6 @@
+ 		return words[words.length-1].replace(/_/g,'');
+ 	},
+ 	
+-	getLineNumbers : function() {
+-		var out = '';
+-		for(i=1,n=o.split('\n').length;i<n;i++) out += i+'\r\n';
+-		return out;
+-		
+-	},
+-	
+ 	snippets : function(evt) {
+ 		var snippets = Language.snippets;	
+ 		var trigger = this.getLastWord();
+@@ -208,11 +199,19 @@
+ 	// put code inside editor
+ 	setCode : function() {
+ 		var code = arguments[0];
++		var lang = arguments[1];
++		if (typeof(lang) != 'undefined'){
++			document.getElementById('cp-lang-style').href = 'languages/' + lang + '.css';
++			document.getElementById('cp-lang-script').src = 'languages/' + lang + '.js';
++		}
++		
+ 		code = code.replace(/\u2009/gi,'');
+ 		code = code.replace(/&/gi,'&amp;');
+        	code = code.replace(/</g,'&lt;');
+         code = code.replace(/>/g,'&gt;');
+ 		editor.innerHTML = '<pre>'+code+'</pre>';
++		
++		CodePress.syntaxHighlight('init');
+ 	},
+ 
+ 	// undo and redo methods
+Index: engines/msie.js
+===================================================================
+--- engines/msie.js	(revision 157)
++++ engines/msie.js	(working copy)
+@@ -215,11 +215,18 @@
+ 	// put code inside editor
+ 	setCode : function() {
+ 		var code = arguments[0];
++		var lang = arguments[1];
++		if (typeof(lang) != 'undefined'){
++			document.getElementById('cp-lang-style').href = 'languages/' + lang + '.css';
++			document.getElementById('cp-lang-script').src = 'languages/' + lang + '.js';
++		}
+ 		code = code.replace(/\u2009/gi,'');
+ 		code = code.replace(/&/gi,'&amp;');		
+        	code = code.replace(/</g,'&lt;');
+         code = code.replace(/>/g,'&gt;');
+ 		editor.innerHTML = '<pre>'+code+'</pre>';
++		
++		CodePress.syntaxHighlight('init');
+ 	},
+ 
+ 	

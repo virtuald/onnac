@@ -242,7 +242,7 @@ function m_unhighlight(item){
 		echo "<p><a href=\"##pageroot##/\">Administration Home</a></p>";
 	}
 	
-	// shows the table that shows groups and users
+	// shows the table that shows groups and items
 	// $result -- a JOIN'ed SQL query
 	// $type -- 'item' or 'group'
 	function show_primary($query, $type){
@@ -332,13 +332,21 @@ function m_unhighlight(item){
 				else
 					// all of the items cannot be blank, might be a better way to do this
 					if (implode($row) != '')
-						echo "<tr><td>" . implode('</td><td>',$row);
+						// the 'name' thing is so that when the user returns to this page they don't have
+						// to scroll back and find this link (in firefox at least) :)
+						echo "<a name=\"mvg_${this_id}\"></a><tr><td>" . implode('</td><td>',$row);
 					else
 						$show_me = false;
 				
 				// show the internal table object, with remove link?
-				if ($show_me)
-					echo "</td><td><a href=\"$this->url&amp;${type}_id=$this_id&amp;${other_type}_id=$other_id&amp;action=remove\">[Remove]</a></td></tr>";
+				if ($show_me){
+					echo "</td><td><a href=\"$this->url&amp;${type}_id=$this_id&amp;${other_type}_id=$other_id&amp;action=remove\">[Remove]</a></td>";
+					
+					if ($type == 'group' && $this->sql_order_field != "")
+						echo "<td><a href=\"$this->url&amp;${type}_id=$this_id&amp;${other_type}_id=$other_id&amp;action=changerank&amp;newrank=up\">[U]</a></td><td><a href=\"$this->url&amp;${type}_id=$this_id&amp;${other_type}_id=$other_id&amp;action=changerank&amp;newrank=down\">[D]</a></td>";
+						
+					echo "</tr>";
+				}
 				
 				$last_id = $this_id;
 				if ($type == 'item')
@@ -814,6 +822,68 @@ function m_unhighlight(item){
 		}else
 			onnac_error("Error committing transaction.");
 
+	}
+	
+	// change the rank of an item that has a sort field
+	function fn_changerank(){
+
+		// sanity check
+		if ($this->sql_order_field == "")
+			return;
+	
+		$group_id = db_escape_string(get_get_var('group_id'));
+		$item_id = get_get_var('item_id');
+		$newrank = get_get_var('newrank');
+				
+		// get all menu items
+		$result = db_query("SELECT $this->sql_item_id,$this->sql_order_field FROM $this->sql_join_table WHERE $this->sql_group_id = '$group_id' ORDER BY $this->sql_order_field ASC");
+
+		$found = false;
+		
+		if (db_is_valid_result($result) && db_num_rows($result) > 1){
+		
+			// iterate and find self
+			while($row = db_fetch_row($result)){
+				
+				if ($row[0] == $item_id){
+					$found = true;
+					break;
+				}
+				$last_row = $row;
+			}
+			
+			if ($found){
+			
+				$success = true;
+			
+				// if valid, switch items around
+				if ($newrank == "up" || $newrank == "down"){
+					
+					if ($newrank == "down")
+						$last_row = db_fetch_row($result);
+					
+					// update that item with our rank, if we're not first already
+					if (isset($last_row)){
+					
+						if (!db_is_valid_result(db_begin_transaction()))
+							return onnac_error("Error beginning transaction! Rank not changed!");
+					
+						// update previous item
+						$success &= db_is_valid_result(db_query("UPDATE $this->sql_join_table SET $this->sql_order_field = '$row[1]' WHERE $this->sql_group_id = '$group_id' AND $this->sql_item_id = '$last_row[0]'")) 
+						
+						&& db_is_valid_result(db_query("UPDATE $this->sql_join_table SET $this->sql_order_field = '$last_row[1]' WHERE $this->sql_group_id = '$group_id' AND $this->sql_item_id = '$item_id'"));
+						
+						if (!$success)
+							return db_rollback_transaction("Error updating rank!");
+							
+						if (!db_is_valid_result(db_commit_transaction()))
+							return onnac_error("Could not complete transaction!");
+					}	
+				}
+				
+				header("Refresh: 0;url='?mode=" . get_get_var('mode') . "#mvg_${group_id}'"); 
+			}
+		}
 	}
 
 	
