@@ -1,3 +1,8 @@
+0.0.9.1 (in process)
+---------------------
+	- Fixed: Error messages actually appear when errors occur using show_internal_error
+	- More sane/useful error messages, especially when $cfg['debug'] = true
+
 0.0.9.0 (3/30/2007)
 ---------------------
 	- Fixed: MySQL 5.x errors in install script

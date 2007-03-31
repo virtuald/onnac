@@ -72,14 +72,22 @@ function render_page($input_url, $error_url = 0){
 	// get the last modified date of the page, db specific!
 	$result = db_query("SELECT " . db_get_timestamp_query("last_update") . ",page_execute," . db_get_timestamp_query("other_update") . " FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url) . "'");
 	
-	if (!$result || db_num_rows($result) != 1){
+	if (!$result){
+		$errmsg = "#R0, unspecified database error at " . htmlentities($input_url) ."!";
+		if ($cfg['debug'] == true)
+			$errmsg .= " Message: " . db_error();
+				
+		show_internal_error($errmsg);
+		return;
+		
+	}else if (db_num_rows($result) != 1){
 		
 		if ($error_url == 0){
 		
 			// redirect to a directory, if it exists
 			$result = db_query("SELECT url FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url . '/') . "'");
 			if ($result && db_num_rows($result) == 1){
-				header("Location: $cfg[rootURL]$input_url/");
+				header("Location: $cfg[rootURL]" . urlencode($input_url) . "/");
 				return;
 			}
 		
@@ -90,7 +98,7 @@ function render_page($input_url, $error_url = 0){
 		}else{
 			// a stupid simple message... 
 			header("Content-Type: text/plain");
-			echo "Error: Page $error_url not found!";
+			echo "Error: Page " . htmlentities($error_url) . " not found!";
 		}
 		return;
 	}
@@ -116,6 +124,15 @@ function render_page($input_url, $error_url = 0){
 	// get the content of the page then -- we use a hash to access it with
 	$result = db_query("SELECT page_content,page_execute,page_title,menu_id,banner_id,template_id FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url) . "'");	
 	
+	if (!$result){
+		$errmsg = "#R1, unspecified database error at " . htmlentities($input_url) ."!";
+		if ($cfg['debug'] == true)
+			$errmsg .= " Message: " . db_error();
+				
+		show_internal_error($errmsg);
+		return;
+	}
+	
 	// grab the page content 
 	$content = db_fetch_row($result);
 	
@@ -135,7 +152,15 @@ function render_page($input_url, $error_url = 0){
 		// get menu
 		$result = db_query("SELECT mit.href,mit.text,mgt.rank FROM $cfg[t_menu_items] mit,$cfg[t_menu_groups] mgt,$cfg[t_content] ct WHERE ct.url_hash = '" . md5($input_url) . "' AND ct.menu_id = mgt.menu_id AND mgt.item_id = mit.item_id ORDER BY mgt.rank ASC");
 		
-		if ($result && db_num_rows($result) > 0){
+		if (!$result){
+			$errmsg = "#R2, unspecified database error at " . htmlentities($input_url) ."!";
+			if ($cfg['debug'] == true)
+				$errmsg .= " Message: " . db_error();
+					
+			show_internal_error($errmsg);
+			return;
+			
+		}else if (db_num_rows($result) > 0){
 		
 			//render menus
 			while($row = db_fetch_row($result)){
@@ -157,11 +182,20 @@ function render_page($input_url, $error_url = 0){
 		else if ($cfg['db_type'] == "postgre")
 			$query .= "RANDOM() LIMIT 1";
 		else
-			return show_internal_error("Invalid DB specified for $input_url!!!");
+			// this really should never happen
+			return show_internal_error("Invalid DB type specified for " . htmlentities($input_url) . "!!!");
 		
 		$result = db_query($query);
 		
-		if ($result && db_num_rows($result) == 1){
+		if (!$result){
+			$errmsg = "#R3, unspecified database error at " . htmlentities($input_url) ."!";
+			if ($cfg['debug'] == true)
+				$errmsg .= " Message: " . db_error();
+					
+			show_internal_error($errmsg);
+			return;
+			
+		}else if (db_num_rows($result) == 1){
 				
 			$row = db_fetch_row($result);	// get the banner, then display it
 			$render['banner'] = "<img src=\"$row[0]\" alt=\"$row[1]\" />";
@@ -177,8 +211,15 @@ function render_page($input_url, $error_url = 0){
 		$result = db_query("SELECT tt.template FROM $cfg[t_templates] tt, $cfg[t_content] ct WHERE ct.url_hash = '" . md5($input_url) . "' AND ct.template_id = tt.template_id");
 		
 		// if invalid template specified, then we should fail
-		if (!$result || db_num_rows($result) != 1)
-			return show_internal_error("Error ##X4 at $input_url!!!");
+		if (!$result){
+			$errmsg = "#R4, unspecified database error at " . htmlentities($input_url) ."!";
+			if ($cfg['debug'] == true)
+				$errmsg .= " Message: " . db_error();
+					
+			show_internal_error($errmsg);
+			return;
+		}else if (db_num_rows($result) != 1)
+			return show_internal_error("Error #X4 at " . htmlentities($input_url) . "!!!");
 
 		// so.. now, load the template
 		$template = db_fetch_row($result);
@@ -199,8 +240,13 @@ function render_page($input_url, $error_url = 0){
 */
 function show_internal_error($msg){
 
+	global $cfg;
+	$cfg['output_replace'] = false;
+
 	if (!headers_sent()) header("HTTP/1.x 500 Internal server error");
-	echo "<html><title>Server Error</title><body><strong>Internal server error:</strong><p>$msg<p>Please try to access the content again, or try a different method to get here.</body></html>";
+	echo "<html><title>Server Error</title><body><h1>Internal server error</h1><p>The server has experienced an unexpected internal error. Please contact the administrator of this site. The error message is:";
+	onnac_error($msg);
+	echo "<hr><address>Powered by Onnac $cfg[onnac_version]</address></body></html>";
 	
 }
 

@@ -70,7 +70,7 @@ require_once ("./include/db.inc.php");			// wrapper functions for db
 // detect whether mod_rewrite was enabled correctly!
 if (!isset($_GET['url'])){
 
-	show_internal_error("Error #00: mod_rewrite is not enabled! Onnac does not work correctly unless mod_rewrite or its equivalent is enabled.");
+	show_internal_error("#00, mod_rewrite is not enabled correctly! Onnac does not work correctly unless mod_rewrite or its equivalent is enabled.");
 	
 	ob_end_flush();
 	die;
@@ -82,7 +82,7 @@ $dbCon = db_connect($cfg['db_host'],$cfg['db_user'],$cfg['db_pass'],$cfg['db_nam
 if (!$dbCon){
 	
 	// no connection, show internal error!
-	show_internal_error("Error #01: The server is temporarily unavailable. Please visit later. Thanks!");
+	show_internal_error("#01, The server could not connect to the database. Please try again later, thanks!");
 
 }else{
 
