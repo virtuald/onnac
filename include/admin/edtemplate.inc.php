@@ -190,20 +190,28 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 
 	global $cfg;
 	
-?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript><script type="text/javascript"><!--
+?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
+<script type="text/javascript" src="##pageroot##/codepress/codepress.js"></script>
+<script type="text/javascript"><!--
 	/*
 		Codepress functions
 	*/
+	var curEditor = '';
+	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
+	var cpLoaded = false;
+	
 	function getCode() {
-		var IFrameObj = document.getElementById('codepress').contentWindow;
-		return IFrameObj.CodePress.getCode();
+		return cp.getCode();
 	}
-	function setCode(lang,text) {
-		var IFrameObj = document.getElementById('codepress').contentWindow;
-		IFrameObj.CodePress.setCode(lang,text);
+	
+	function setCode(text) {
+		var oElement = document.forms['edtemplate_editor'].editor_syntax;
+		var lang = oElement.options[oElement.selectedIndex].value;
+		cp.setCode(text,lang);
 	}
-	function switchLanguage(lang){
-		setCode(lang,getCode());
+	
+	function switchLanguage(){
+		setCode(getCode());
 	}
 	
 	// revert editor contents
@@ -213,13 +221,11 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 	}
 	
 	function ed_load(){
-<?php
-	// setup the editor
 	
-	echo "setCode('html',unescape(\"" . rawurlencode($content) . "\"));";
-	echo "document.forms['edtemplate_editor'].editor_syntax.options[1].selected = true;\n";
-	
-?>
+		var cpi = document.getElementById('cp_container');
+		cpi.innerHTML = '<text' + 'area id="cp" class="codepress html">' + initialCode + '</text' + 'area>';
+		CodePress.run();
+		document.forms['edtemplate_editor'].editor_syntax.options[1].selected = true;
 	}
 
 	attachOnload(window,ed_load);
@@ -238,18 +244,16 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 &#35;&#35;title&#35;&#35; - Title of page<br/>
 &#35;&#35;menu&#35;&#35; - Page menu<br/>
 &#35;&#35;banner&#35;&#35; - Page banner</p>
-<p>
-	Highlighting type:
-	<select name="editor_syntax" onchange="switchLanguage(this.options[this.selectedIndex].value)">
-		<option value="css">CSS</option>
-		<option value="html">HTML</option>
-		<option value="java">Java</option>
-		<option value="javascript">Javascript</option>
-		<option value="php">PHP</option>
-		<option value="text">Plain Text</option>
-	</select>
-</p>
-<iframe id="codepress" src="##pageroot##/codepress/editor.html"></iframe>
+<p>Highlighting type:
+<select name="editor_syntax" onchange="switchLanguage()">
+	<option value="css">CSS</option>
+	<option value="html">HTML</option>
+	<option value="java">Java</option>
+	<option value="javascript">Javascript</option>
+	<option value="php">PHP</option>
+	<option value="text">Plain Text</option>
+</select></p>
+<div id="cp_container"></div>
 <br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
 <p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
 <input type="submit" name="submit" value="Change content">

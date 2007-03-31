@@ -173,8 +173,11 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 	else
 		$username = "installer";
 
-	// get needed items
-	$templates = get_import_items('template_name',db_get_timestamp_query('last_update'),$cfg['t_templates']);
+	// get needed items, differnt stuff for different times
+	if (!$user_approved && !$install_mode)
+		$templates = get_import_items('template_name',db_get_timestamp_query('last_update'),$cfg['t_templates']);
+	else
+		$templates = get_import_items('template_name','template_id',$cfg['t_templates']);
 	
 	// setup a table here
 	if (!$user_approved){
@@ -188,7 +191,6 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 	// keys to check
 	$params = array('template_name','template','last_update');
 	
-	$query = array();
 	$i = 0;
 	
 	foreach($imported['templates'] as $node){
@@ -207,31 +209,50 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 				if (array_key_exists($node['template_name'],$templates)){
 					echo '</td><td>' . date("m/d/Y g:i a",$templates[$node['template_name']]) . '</td>';
 					echo '<td>' . date("m/d/Y g:i a",$node['last_update']) . '</td>';
-					echo '<td><input value="yes" type="checkbox" name="templ-approved-';
-					echo htmlentities($node['template_name']) . '" checked /></td><td>&nbsp;</td></tr>';
+					echo '<td><input value="yes" type="checkbox" name="';
+					echo urlencode("templ-approved-$node[template_name]") . '" checked /></td><td>&nbsp;</td></tr>';
 				}else{
 					echo '</td><td>--</td><td>' . date("m/d/Y g:i a",$node['last_update']) . '</td>';
-					echo '<td>&nbsp;</td><td><input value="yes" type="checkbox" name="templ-approved-';
-					echo htmlentities($node['template_name']) . '" checked /></td></tr>';
+					echo '<td>&nbsp;</td><td><input value="yes" type="checkbox" name="';
+					echo urlencode("templ-approved-$node[template_name]") . '" checked /></td></tr>';
 				}
+				
+				// this doesn't matter a whole lot, just needs to be *something*
+				$templates[$node['template_name']] = 0;
 			
-			}else if ($install_mode == true || get_post_var('templ-approved-' . $node['template_name']) == 'yes'){
+			}else if ($install_mode == true || get_post_var(urlencode('templ-approved-' . $node['template_name'])) == 'yes'){
+				
+				$insert = false;
 				
 				if (array_key_exists($node['template_name'],$templates))
 					// update
-					$query[] = "UPDATE $cfg[t_templates] SET template = '" . db_escape_string($node['template']) . "', last_update = NOW(), last_update_by = '" . $username . "' WHERE template_name = '" . db_escape_string($node['template_name']) . "';";
-				else
+					$query = "UPDATE $cfg[t_templates] SET template = '" . db_escape_string($node['template']) . "', last_update = NOW(), last_update_by = '" . $username . "' WHERE template_name = '" . db_escape_string($node['template_name']) . "';";
+				else{
 					// insert
-					$query[] = "INSERT INTO $cfg[t_templates] (template_name,template,last_update,last_update_by) VALUES ('" . db_escape_string($node['template_name']) . "','" . db_escape_string($node['template']) . "',NOW(),'" . $username . "');";
+					$query = "INSERT INTO $cfg[t_templates] (template_name,template,last_update,last_update_by) VALUES ('" . db_escape_string($node['template_name']) . "','" . db_escape_string($node['template']) . "',NOW(),'" . $username . "');";
+					$insert = true;
+				}
+					
+				if (!db_is_valid_result(db_query($query)))
+					return db_rollback_transaction("Could not update template!");
+			
+				// get last id if it was an insert
+				if ($insert){
+					$result = db_get_last_id($cfg['t_templates'],'template_id');
+					if (!db_has_rows($result))
+						return db_rollback_transaction("Could not get last template ID!");
 				
+					// add the id 
+					$row = db_fetch_row($result);
+					$templates[$node['template_name']] = $row[0];
+				}
 			}
 		}
 	}
 	
 	if ($user_approved){
 	
-		// perform the import
-		return do_import($query,'Template');
+		echo "<p>Template import completed successfully!</p>";
 		
 	}else{
 		echo '</table>';
@@ -244,7 +265,7 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 		}
 	}
 	
-	return true;
+	return $templates;
 }
 
 
@@ -266,8 +287,8 @@ function import_content($imported,$user_approved,$install_mode){
 		echo '<p><form method="post" action="##pageroot##/?mode=import&amp;action=import">';
 	
 	// import other items first, so things match after import
-	$r_templates = import_templates($imported,$user_approved,$install_mode,true);
-	if ($r_templates === false) return false;
+	$templates = import_templates($imported,$user_approved,$install_mode,true);
+	if ($templates === false) return false;
 	
 	$menus = import_menus($imported,$user_approved,$install_mode);
 	if ($menus === false) return false;
@@ -276,8 +297,8 @@ function import_content($imported,$user_approved,$install_mode){
 	if ($banners === false) return false;
 	
 	// get all needed items into an array
-	$templates = get_import_items('template_name','template_id',$cfg['t_templates']);
 	$content = get_import_items('url_hash',db_get_timestamp_query('last_update'),$cfg['t_content']);
+
 	
 	// this comes next
 	if (!$user_approved){
@@ -369,10 +390,17 @@ VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute
 	if ($user_approved){
 	
 		// execute our query
-		$success = do_import($query,'Content');
+		foreach($query as $q_str){
+			
+			$result = db_query($q_str);
+			if (!db_is_valid_result($result))
+				return db_rollback_transaction("DB Error performing Content import");
+		}
+
+		echo "<p>Content import completed successfully!</p>";
 		
-		if (!$success)
-			return false;
+		// erase session data
+		$_SESSION['imported'] = null;
 			
 	}else{
 		// ask for approval
@@ -387,29 +415,6 @@ VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute
 	return true;
 }
 
-
-// this function actually does the importing -- query is an array of queries
-function do_import($query,$type){
-	
-	$error = false;
-	foreach($query as $q_str){
-		if ($error == false){
-
-			$result = db_query($q_str);
-			if (!db_is_valid_result($result))
-				return db_rollback_transaction("DB Error performing $type import");
-		}
-	}
-	
-	if ($error == false){
-		echo "<p>$type import completed successfully!</p>";
-	}
-	
-	// erase session data
-	$_SESSION['imported'] = null;
-	
-	return !$error;
-}
 
 
 // import menus
@@ -572,15 +577,18 @@ class import_module {
 							$t_item = $n_item[$this->sql_item_data[$x]];
 							
 							echo htmlentities($t_item);
-							$ikey .= $t_item;
+							$ikey .= trim($t_item);
 							
 							if ($x + 1 < $c)
 								$ikey .= ':';
 							
 							echo "</td><td>";
 						}
-							
+
+						
 						$ikey = md5($ikey);
+						
+						
 
 						// check to see if the item exists already
 						if (!array_key_exists($ikey,$items)){
@@ -666,7 +674,7 @@ class import_module {
 						$ikey = '';
 						
 						for($x = 0;$x < $c; $x++){
-							$ikey .= $n_item[$this->sql_item_data[$x]];
+							$ikey .= trim($n_item[$this->sql_item_data[$x]]);
 							if ($x + 1 < $c)
 								$ikey .= ':';
 						}
@@ -779,8 +787,12 @@ class import_module {
 		$result = db_query("SELECT " . implode(',',$fields) . ",$this->sql_item_id FROM $table");
 		if (db_has_rows($result))
 			while ($row = db_fetch_row($result)){
+				// last item is always the id
 				$id = $row[$c];
+	
+				// pick the items to hash, and use the hash as the key
 				$row = array_splice($row,0,$c);
+				array_walk($row,'trim');
 				$output[ md5(implode(':',$row)) ] = $id;
 			}	
 		return $output;
