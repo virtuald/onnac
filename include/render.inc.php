@@ -57,9 +57,6 @@ function render_page($input_url, $error_url = 0){
 	// databases and such... 
 	global $cfg, $render;
 	
-	// turn replacements on
-	$cfg['output_replace'] = true;
-	
 	// configure elink mode
 	$cfg['elink_mode'] = false;
 	if (get_get_var('elink_mode') == 'on')
@@ -86,8 +83,8 @@ function render_page($input_url, $error_url = 0){
 		
 			// redirect to a directory, if it exists
 			$result = db_query("SELECT url FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url . '/') . "'");
-			if ($result && db_num_rows($result) == 1){
-				header("Location: $cfg[rootURL]" . urlencode($input_url) . "/");
+			if ($result && db_num_rows($result) == 1){			
+				header("Location: $cfg[rootURL]" . str_replace("%2F","/",str_replace("%2f","/",urlencode($input_url))) . "/");
 				return;
 			}
 		
@@ -226,12 +223,16 @@ function render_page($input_url, $error_url = 0){
 		$render['template'] = $template[0];
 	}
 	
+	// signals the output handler
+	$cfg['output_replace'] = true;
+	
 	// do we need to interpret any PHP in the content? Do it here. This also echos out
 	// all the content as well, so we get two things in one package! :)
 	if ($content[1])
 		eval(';?>' . $content[0]);		// execute the php code on the page
 	else
 		echo $content[0];				// for portions of the site that don't need any dynamic content...
+	
 	
 }
 
@@ -241,7 +242,7 @@ function render_page($input_url, $error_url = 0){
 function show_internal_error($msg){
 
 	global $cfg;
-	$cfg['output_replace'] = false;
+	
 
 	if (!headers_sent()) header("HTTP/1.x 500 Internal server error");
 	echo "<html><title>Server Error</title><body><h1>Internal server error</h1><p>The server has experienced an unexpected internal error. Please contact the administrator of this site. The error message is:";
