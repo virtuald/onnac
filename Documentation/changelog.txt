@@ -1,9 +1,10 @@
-0.0.9.1 (3/31/2007)
+0.0.9.1 (4/1/2007)
 ---------------------
 	- Fixed: Import did not import templates with spaces in their names correctly, and did 
 	not associate pages with the templates
 	- Fixed: Import did not handle menu/banner names with trailing spaces correctly
 	- Fixed: Error messages actually appear when errors occur using show_internal_error
+	- Fixed: Editing templates did not work, oops. Sorry about that.
 	- More sane/useful error messages, especially when $cfg['debug'] = true
 
 0.0.9.0 (3/30/2007)
