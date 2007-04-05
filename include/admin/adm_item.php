@@ -33,7 +33,7 @@
 	
 	-- Has transaction support 
 	
-	TODO: Item ordering
+	TODO: Ajax-type stuff
 	
 */
 
@@ -479,6 +479,18 @@ function m_unhighlight(item){
 			return;
 		}
 		
+		// make sure to set the order field correctly, if it exists
+		if ($this->sql_order_field != ""){
+			$result = db_query("SELECT $this->sql_order_field FROM $this->sql_join_table WHERE $this->sql_group_id = '$group_id'");
+			if (!db_is_valid_result($result))
+				return onnac_error("Could not retrieve the $this->type order");
+			else if (db_num_rows($result) > 0){
+				$rank = db_fetch_row($result);
+				$rank = $rank[0];
+			}else
+				$rank = 0;
+		}
+		
 		// get item id's
 		$result = db_query("SELECT a.$this->sql_item_id
 				FROM $this->sql_item_table a
@@ -490,9 +502,18 @@ function m_unhighlight(item){
 	
 		$query = array();
 		
-		while ($row = db_fetch_row($result))
-			if (get_post_var("item_$row[0]") == "yes")
-				$query[] = "INSERT INTO $this->sql_join_table ($this->sql_item_id,$this->sql_group_id) VALUES ($row[0],$group_id);";
+		while ($row = db_fetch_row($result)){
+			if (get_post_var("item_$row[0]") == "yes"){
+				if ($this->sql_order_field != ""){
+					$rank += 1;
+					$qstr = "INSERT INTO $this->sql_join_table ($this->sql_item_id,$this->sql_group_id,$this->sql_order_field) VALUES ($row[0],$group_id,$rank);";
+				}else{
+					$qstr = "INSERT INTO $this->sql_join_table ($this->sql_item_id,$this->sql_group_id) VALUES ($row[0],$group_id);";
+				}
+				
+				$query[] = $qstr;
+			}
+		}
 		
 		if (count($query) == 0)
 			return onnac_error('No items selected!');
@@ -868,20 +889,31 @@ function m_unhighlight(item){
 						if (!db_is_valid_result(db_begin_transaction()))
 							return onnac_error("Error beginning transaction! Rank not changed!");
 					
-						// update previous item
+						// this should never happen, but it did in Onnac 0.0.9.1 and below.. oops
+						if ($row[1] == $last_row[1])
+							if ($newrank == "up")
+								$row[1] = $last_row[1] + 1;
+							else
+								$row[1] = $last_row[0] - 1;
+					
+						// update other item, then current item
 						$success &= db_is_valid_result(db_query("UPDATE $this->sql_join_table SET $this->sql_order_field = '$row[1]' WHERE $this->sql_group_id = '$group_id' AND $this->sql_item_id = '$last_row[0]'")) 
 						
-						&& db_is_valid_result(db_query("UPDATE $this->sql_join_table SET $this->sql_order_field = '$last_row[1]' WHERE $this->sql_group_id = '$group_id' AND $this->sql_item_id = '$item_id'"));
+						&& db_is_valid_result(db_query("UPDATE $this->sql_join_table SET $this->sql_order_field = '$last_row[1]' WHERE $this->sql_group_id = '$group_id' AND $this->sql_item_id = '$item_id'"))
+						
+						&& $this->update_content($group_id,false);
 						
 						if (!$success)
 							return db_rollback_transaction("Error updating rank!");
 							
 						if (!db_is_valid_result(db_commit_transaction()))
 							return onnac_error("Could not complete transaction!");
-					}	
+					}
 				}
 				
 				header("Refresh: 0;url='?mode=" . get_get_var('mode') . "#mvg_${group_id}'"); 
+			}else{
+				echo "Error! $this->type item not found!";
 			}
 		}
 	}

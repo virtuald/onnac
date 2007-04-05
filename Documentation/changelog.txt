@@ -1,3 +1,8 @@
+0.0.9.2 (in process)
+---------------------
+	- Fixed: Menu ordering did not work properly if order fields were same values
+	- Fixed: Menus were all initially inserted with the same order field
+
 0.0.9.1 (4/1/2007)
 ---------------------
 	- Fixed: Import did not import templates with spaces in their names correctly, and did 
