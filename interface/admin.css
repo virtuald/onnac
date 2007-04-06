@@ -43,11 +43,6 @@ color: white;
 font-size: 1.5em;
 }
 
-#adm_body{
-width: 78%;
-margin: 0 auto;
-}
-
 #adm_content{
 padding: 1em;
 border: 1px dotted #000000;
@@ -162,8 +157,8 @@ float:right;
 }
 
 #cp_cp,#cp{
-	width: 95%;
-	height: 450px;
+	width: 96%;
+	height: 550px;
 	border: 1px solid #000000;
 }
 
