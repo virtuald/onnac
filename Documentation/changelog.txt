@@ -2,6 +2,8 @@
 ---------------------
 	- Fixed: Menu ordering did not work properly if order fields were same values
 	- Fixed: Menus were all initially inserted with the same order field
+	- Fixed: Installer did not create tables correctly in MySQL 4.0
+	- Installer now shows database server version (if possible, postgre can only do in in PHP 5)
 
 0.0.9.1 (4/1/2007)
 ---------------------

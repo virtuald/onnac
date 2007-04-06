@@ -312,4 +312,26 @@ function db_is_valid_result($result,$show_error = true){
 	return $result;
 }
 
+// returns the version info if it can
+function db_version(){
+
+	global $cfg;
+	
+	switch ($cfg['db_type']){
+		case "mysql":
+			return mysql_get_server_info();
+		
+		case "postgre":
+			if (!function_exists('pg_version'))
+				return "N/A";
+				
+			$version = pg_version();
+			return $version['server_version'];
+		
+		default:
+			die("Database type not specified in configuration.");
+	}
+
+}
+
 ?>

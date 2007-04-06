@@ -169,6 +169,9 @@ if ($db_type != ""){
 			echo "<p><strong>Error</strong>: Could not connect to database, error: <em>" . htmlentities(db_error()) . "</em></p>";
 			$validated = 0;
 		}
+		
+		if ($validated)
+			echo "<p>Connected to $db_type server version " . db_version() . " on " . htmlentities($db_host) . "</p>";
 	}
 	
 	/*
@@ -182,6 +185,15 @@ if ($db_type != ""){
 
 $indexes = array();
 
+// compatibility variables - stupid older mysql.. 
+if ($cfg['db_type'] == 'mysql'){
+
+	$serial = "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY";
+
+}else{	// postgre
+	$serial = "SERIAL NOT NULL PRIMARY KEY";
+}
+
 $q_content = 
 "CREATE TABLE " . $db_prefix . "content (
 	url_hash 		varchar(32) NOT NULL default '' PRIMARY KEY,
@@ -194,7 +206,7 @@ $q_content =
 	menu_id 		integer NOT NULL default '-1',
 	visited_count 	integer NOT NULL default '0',
 	page_content 	text NOT NULL,
-	last_update 	timestamp NOT NULL default NOW(),
+	last_update 	timestamp NOT NULL,
 	other_update	timestamp NOT NULL,
 	last_visit 		timestamp NOT NULL,
 	last_update_by 	varchar(255) NOT NULL
@@ -202,7 +214,7 @@ $q_content =
 
 $q_banners = 
 "CREATE TABLE " . $db_prefix . "banners (
-	banner_id SERIAL NOT NULL PRIMARY KEY,
+	banner_id $serial,
 	name varchar(255) NOT NULL
 )";
 
@@ -217,14 +229,14 @@ $indexes[] = "CREATE INDEX m_item_id ON " . $db_prefix . "banner_groups (item_id
 
 $q_banner_items = 
 "CREATE TABLE " . $db_prefix . "banner_items (
-	item_id SERIAL NOT NULL PRIMARY KEY,
+	item_id $serial,
 	src varchar(255) NOT NULL,
 	alt varchar(255) NOT NULL
 )";
 
 $q_menus =
 "CREATE TABLE " . $db_prefix . "menus (
-	menu_id 	SERIAL NOT NULL PRIMARY KEY,
+	menu_id 	$serial,
 	name 		varchar(255) NOT NULL
 )";
 
@@ -240,23 +252,23 @@ $indexes[] = "CREATE INDEX m_item_id ON " . $db_prefix . "menu_groups (item_id)"
 
 $q_menu_items =
 "CREATE TABLE " . $db_prefix . "menu_items (
-	item_id 	SERIAL NOT NULL PRIMARY KEY,
+	item_id 	$serial,
 	text 		varchar(255) NOT NULL,
 	href 		varchar(255) NOT NULL
 )";
 
 $q_templates = 
 "CREATE TABLE " . $db_prefix . "templates (
-	template_id 	SERIAL NOT NULL PRIMARY KEY,
+	template_id 	$serial,
 	template_name 	varchar(32) NOT NULL UNIQUE default '',
 	template 		text NOT NULL,
-	last_update 	timestamp NOT NULL default CURRENT_TIMESTAMP,
+	last_update 	timestamp NOT NULL,
 	last_update_by 	varchar(255) NOT NULL
 )";
 
 $q_users =
 "CREATE TABLE " . $db_prefix . "users (
-	user_id 		SERIAL NOT NULL PRIMARY KEY,
+	user_id 		$serial,
 	username 		varchar(32) NOT NULL default '' UNIQUE,
 	description		varchar(255) NOT NULL default '',
 	hash 			varchar(32) NOT NULL default ''
@@ -273,17 +285,17 @@ $indexes[] = "CREATE INDEX group_id ON " . $db_prefix . "user_groups  (group_id)
 
 $q_user_group_names = 
 "CREATE TABLE " . $db_prefix . "user_group_names (
-	group_id 	SERIAL NOT NULL PRIMARY KEY,
+	group_id 	$serial,
 	group_name 	varchar(32) NOT NULL UNIQUE
 )";
 
 $q_errors = 
 "CREATE TABLE " . $db_prefix . "errors (
-	error_id 	SERIAL NOT NULL PRIMARY KEY,
+	error_id 	$serial,
 	referer 	varchar(255) NOT NULL,
 	ip 			varchar(15) NOT NULL default '',
 	url 		text NOT NULL,
-	time 		timestamp NOT NULL default CURRENT_TIMESTAMP
+	time 		timestamp NOT NULL
 )";
 		
 	// begin transacted installation -- note, MySQL does NOT support transacted table creation
