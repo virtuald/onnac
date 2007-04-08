@@ -4,6 +4,9 @@
 	- Fixed: Menus were all initially inserted with the same order field
 	- Fixed: Installer did not create tables correctly in MySQL 4.0
 	- Installer now shows database server version (if possible, postgre can only do in in PHP 5)
+	- Changed file management interface to be folder-oriented, as opposed to the old format
+	- Added ##db_queries## and ##time## to parameters
+	- Added ability to specify which ## parameters would actually be replaced
 
 0.0.9.1 (4/1/2007)
 ---------------------

@@ -29,6 +29,12 @@
 
 */
 
+
+// start by measuring the execution time
+global $execution_time;
+list($usec, $sec) = explode(" ", microtime());
+$execution_time = ((float)$usec + (float)$sec);
+
 // this is *really* inefficient, so you should disable magic quotes somewhere else. 
 // However, in case you forget, this is here. Also, if you're running php from CGI 
 // instead of an apache module and you cant change it... :(

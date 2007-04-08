@@ -195,11 +195,20 @@ function onnac_error($message, $retval = false){
 	
 }
 
+/**
+ * Simple function to replicate PHP 5 behaviour (from PHP manual)
+ */
+function microtime_float()
+{
+    list($usec, $sec) = explode(" ", microtime());
+    return ((float)$usec + (float)$sec);
+}
+
 // debugging item
 function prn($var){
-	echo "<pre>";
+	echo "\n\n<pre>\n";
 	print_r($var);
-	echo "</pre>";
+	echo "\n</pre>\n\n";
 }
 
 ?>

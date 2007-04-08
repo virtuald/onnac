@@ -62,6 +62,26 @@ text-align: right;
 float:right;
 }
 
+/* edurl browsing interface */
+.edurl_tab{
+	padding: 0.5em;
+	border: 1px solid #000000;
+	border-right: 2px solid #000000;
+	width: 35%;
+	display: block;
+	
+}
+
+.edurl_browser{
+	padding: 0.5em;
+	border: 1px solid #000000;
+}
+	
+.edurl_hidden{
+	display: none;
+	background: #ffcc99;
+}
+
 /* url table stuff */
 .adm_class{
 	margin-left: 0.25em; 

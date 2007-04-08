@@ -62,4 +62,9 @@ $cfg['use_ssl']					= false;	// set this to true for auth pages to use SSL
 $cfg['debug']					= false;	// set this to true to turn on debug messages
 											// should not be set to true in a production environment
 
+// this is the list of keywords that will get replaced, excluding ##content## and ##time##.
+// basically, the global $render[$x] contains the value to be replaced by ##$x##, where $x is an element in
+// this array. the order *does* matter -- pageroot and rootdir should generally be LAST 											
+$cfg['replace_keywords'] = array('title','banner','menu','db_queries','pageroot','rootdir');
+
 ?>

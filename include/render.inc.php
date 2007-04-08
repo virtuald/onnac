@@ -36,6 +36,7 @@ $render['menu'] = "";
 $render['banner'] = "";
 $render['template'] = "";
 $render['input_url'] = "";
+
 $perform_additional_subsitution = false;	// provides for a way to display ## variables... 
 
 // utility functions
@@ -260,58 +261,51 @@ function show_internal_error($msg){
 
 function output_callback($buffer){
 
-	global $render,$cfg,$perform_additional_substitution;
+	global $render,$execution_time,$cfg,$perform_additional_substitution;
 
 	// only do replacement if told to do so
 	if ($cfg['output_replace'] == true){
 	
-		if ($cfg['elink_mode'])
-			$buffer .= '##elink##';
+		// template replacement first
+		$buffer = str_replace('##content##',$buffer,$render['template']);
 	
-		// build the page
-		$rendered_html = str_replace("##content##",$buffer,$render['template']);			// content
-		$rendered_html = str_replace("##title##",$render['title'],$rendered_html);			// title
-		
-		$rendered_html = str_replace("##banner##",$render['banner'],$rendered_html);		// banner
-		$rendered_html = str_replace("##menu##",$render['menu'],$rendered_html);			// menu
-		
-		// these three must come last
-		$rendered_html = str_replace("##pageroot##",$cfg['page_root'],$rendered_html);		// page root
-		$rendered_html = str_replace("##rootdir##",$cfg['rootURL'],$rendered_html);			// any links
+		$render['pageroot'] = $cfg['page_root'];
+		$render['rootURL'] = $cfg['rootURL'];
+		$render['db_queries'] = $cfg['db_queries'];
+	
+		// TODO: There is probably a better way to do this
+		foreach ($cfg['replace_keywords'] as $r){
 			
-		// TODO: strip the final rendering of BR and extra spaces -- but in a compatible manner :)
-		
-		// hackish workaround so we can display the special chars in the admin pages
-		if ($perform_additional_substitution == true){
+			$buffer = str_replace("##$r##",$render[$r],$buffer);
 			
-			$rendered_html = str_replace("#title#","##title##",$rendered_html);			// title
-			$rendered_html = str_replace("#menu#","##menu##",$rendered_html);			// menu
-			$rendered_html = str_replace("#banner#","##banner##",$rendered_html);		// banner
-			$rendered_html = str_replace("#pageroot#","##pageroot##",$rendered_html);	// page root
-			$rendered_html = str_replace("#rootdir#","##rootdir##",$rendered_html);		// any links
+			if ($perform_additional_substitution == true)
+				$buffer = str_replace("#$r#","##$r##",$buffer);
 		}
 		
 		// if elink_mode is set, then add little [edit] links after each link! Neat. :)
 		if ($cfg['elink_mode']){
 			$x = str_replace('/','\/',addslashes($cfg['rootURL']));
 			// crazy regular expression -- it works, nuff said, dont ask how
-			$rendered_html = preg_replace(
+			$buffer = preg_replace(
 				"/<a([^>]+)href=(\"|')$x([\/]?)([^\?\"\']*)([\?]?)([^\"']*)(\"|')([^>]*)>([^<]*)<\/a\>/is",
 				"<a\\1href=\\2$cfg[rootURL]/\\4?elink_mode=on&amp;\\6\\7\\8>\\9</a> <a\\1href=\\2$cfg[rootURL]/interface/?mode=edurl&amp;page_url=/\\4&amp;ed_action=edit\\7>[Edit]</a>",
-				$rendered_html);
+				$buffer);
 			
 			// show a link to edit that page on the bottom 
-			$rendered_html = str_replace('##elink##','<p><a href="' . $cfg['rootURL'] . '/interface/?mode=edurl&amp;page_url=' . htmlentities($render['input_url']) . '&amp;ed_action=edit">[Edit this page]</a></p>',$rendered_html);
+			$buffer .= '<p><a href="' . $cfg['rootURL'] . '/interface/?mode=edurl&amp;page_url=' . htmlentities($render['input_url']) . '&amp;ed_action=edit">[Edit this page]</a></p>';
 		}
 		
-		// Allows persistant connections
-		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13
-		header('Content-Length: '.strlen($rendered_html));
-		return $rendered_html;
+		// do this at the last second
+		$buffer = str_replace('##time##',((int)((microtime_float() - $execution_time) * 1000))/1000,$buffer);
+		if ($perform_additional_subsitution == true)
+			$buffer = str_replace('#time#','##time##',$buffer);
 	}
 	
-	header('Content-Length: ' . strlen($buffer));
+	// Allows persistant connections
+	// http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13
+	header('Content-Length: '.strlen($buffer));
 	return $buffer;
+
 }
 
 

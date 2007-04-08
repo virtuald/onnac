@@ -49,8 +49,7 @@ function edurl($error = "no"){
 	
 	if ($page_url == "" || $error == "shownew"){
 	
-?><style>#edurl_hidden{display:none;}</style>
-<script type="text/javascript">
+?><script type="text/javascript">
 <!--
 
 	function admu_toggle(name){
@@ -59,6 +58,7 @@ function edurl($error = "no"){
 		var span = header.firstChild;
 		
 		if (item.style.display == "none"){
+			set_cookie("edurl_last",name);
 			header.style.backgroundColor = "#cccccc";
 			item.style.display = "block";
 			if (span) span.innerHTML = "-";
@@ -68,27 +68,43 @@ function edurl($error = "no"){
 			if (span) span.innerHTML = "+";
 		}
 	}
+	
+	function switch_dir(current,next){
+		next_element = document.getElementById(next);
+		if (next_element){
+			document.getElementById(current).style.display = 'none';
+			next_element.style.display = 'block';
+			set_cookie("onnac_edurl_last",next);
+		}
+		return false;
+	}
+	
+	var hiddenShown = false;
+	function show_hidden_files(){
+		if (!hiddenShown){
+			changecss('.edurl_hidden','display','block');
+			document.getElementById('show_hidden_files').innerHTML = "Hide hidden files";
+		}else{
+			changecss('.edurl_hidden','display','none');
+			document.getElementById('show_hidden_files').innerHTML = "Show hidden files";
+		}
+		
+		hiddenShown = !hiddenShown;
+	}
+	
 //-->
 </script>
 <?php
 	
 	
 		// echo form to add a new page.. 
-		echo "<form action=\"##pageroot##/?mode=edurl&amp;ed_action=newpage&amp;page_url=new\" method=\"post\"><input type=text name=newurl value=\"/\"><input type=submit name=submit value=\"Create new page\"></form>";
+		echo "<form action=\"##pageroot##/?mode=edurl&amp;ed_action=newpage&amp;page_url=new\" method=\"post\"><input type=text name=newurl value=\"/\"><input type=submit name=submit value=\"Create new page\"> <a id=\"show_hidden_files\" href=\"javascript:show_hidden_files()\">Show Hidden Files</a></form>";
 	
-		$result = db_query("SELECT url,page_title," . db_get_timestamp_query("last_update") . ",last_update_by FROM $cfg[t_content] WHERE hidden = 0 ORDER BY url ASC");
+		$result = db_query("SELECT url,page_title," . db_get_timestamp_query("last_update") . ",last_update_by,hidden FROM $cfg[t_content] ORDER BY url ASC");
 		
-		$d2 = edurl_show_list($result,'edurl_shown',1);
-		
-		echo "<p>Hidden pages: <a href=\"javascript:toggle_hidden('edurl_hidden')\">Show/Hide</a></p>";
-		$result = db_query("SELECT url,page_title," . db_get_timestamp_query("last_update") . ",last_update_by FROM $cfg[t_content] WHERE hidden <> 0 ORDER BY url ASC");
-		
-		$d1 = edurl_show_list($result,'edurl_hidden',0);
+		$directories = edurl_show_list($result,'edurl_shown',1);
 		
 		// combine directory list and show add items
-		$directories = array_merge($d1,$d2);
-		sort($directories);
-		
 		edurl_show_add_to_dir($directories,'template');
 		edurl_show_add_to_dir($directories,'menu');
 		edurl_show_add_to_dir($directories,'banner');
@@ -282,7 +298,7 @@ function edurl_show_list($result,$id,$hide){
 		// first, assemble three arrays of file information
 		while ($row = db_fetch_row($result)){
 			
-			// store sql data
+			// store sql data, we'll use it later
 			$t_sql_data[] = $row;
 			
 			// store directory names, without trailing /
@@ -296,115 +312,168 @@ function edurl_show_list($result,$id,$hide){
 			$fname = trim(basename($row[0] . ' '));
 			$t_file[] = $fname;
 				
-			// create mapping
+			// create mapping using the full file name, as a pointer to the SQL data
 			$t_map[$row[0]] = $x++;
 		}
 		
 		// sort by directory, then by file
 		array_multisort($t_dir,$t_file);
 		
-		// more data to assemble directory tree
-		$t_start = '<table class="highlighted">';
+		// this MUST exist, otherwise the default directory should be shown instead
+		$shown_div_hash = get_cookie_var('onnac_edurl_last');
+		$shown_div_found = false;
 		
-		$d_tree = array();
+		// contains 3 columns:
+		// 	[0] Directory file entries (table row)
+		//	[1] Directory name, split by '/'
+		//	[2] Directory name (full)
+		// 	[3] id of its div: $id_[md5(directory name)]
+		//	[4] Set to true if a directory entirely consists of hidden files
 		$directories = array();
 		
-		$current = "";
-		$old_dir = array('','.');
-		$changed = true;
+		// used to find the parent directory
+		$dir_map[] = array();
+		
+		$cur_directory_info = "";
+		$old_dir = ".";
 		
 		// next, assemble the table listings for each directory
 		for ($i = 0;$i < count($t_dir);$i++){
 				
 			// detect directory change
-			$cur_dir = explode('/',$t_dir[$i]);
-			if (count($cur_dir) != count($old_dir)){
-				$changed = true;
-			}else{
-				for($j = 0;$j < count($cur_dir);$j++){
-					if ($cur_dir[$j] != $old_dir[$j]){
-						$changed = true;
-						break;
-					}
-				}
-			}
+			$cur_dir = $t_dir[$i];
 			
-			if ($changed == true){
-				if ($current != ""){
-					$directories[] = $current . '</table>';
-					$d_tree[] = $old_dir;
+			// at next directory, go up/down a level
+			if ($cur_dir != $old_dir){
+				
+				if ($old_dir != '.'){
+				
+					// i wish this could somehow be a function.. 
+					$ed = explode('/',$old_dir);
+					
+					// add parents to array, if they dont exist
+					for ($j = count($ed)-1;$j > 0;$j--){
+						$dir_slice = array_slice($ed,0,$j);
+						$dir_parent = implode($dir_slice,'/');
+						if (isset($dir_map[$dir_parent]))
+							break;	// parent exists
+						$directories[] = array('',$dir_slice,$dir_parent,"${id}_" . md5($dir_parent));
+						$dirs[] = $dir_parent;
+						$dir_map[$dir_parent] = count($directories)-1;
+					}
+				
+					// add to array
+					$directories[] = array($cur_directory_info,$ed,$old_dir,"${id}_" . md5($old_dir));
+					$dirs[] = $old_dir;
+					$dir_map[$old_dir] = count($directories)-1;
+					
+					if ($shown_div_hash == "${id}_" . md5($old_dir))
+						$shown_div_found = true;
 				}
 				
-				$current = $t_start;
+				// the new becomes old
+				$cur_directory_info = "";
 				$old_dir = $cur_dir;
-				$changed = false;
 			}
 			
-			// grab sql data
-			
+			// grab sql data, create page entry and append it
 			$row = $t_sql_data[$t_map[$t_dir[$i] . '/' . $t_file[$i]]];
 			
 			$url = htmlentities($row[0]);
 			$fname = $t_file[$i] == '' ? '/' : $t_file[$i];
 			
-			$current .= 
-			"\n\t\t" . '<tr><td class="admu_url"><a href="##rootdir##' . $url . '">' . htmlentities($fname) . '</td><td class="admu_title">' . htmlentities($row[1]) . '&nbsp;</td><td class="admu_mod_by">' . htmlentities($row[3]) . '</td><td class="admu_mod">' . date('m/d/Y g:ia',$row[2]) . '</td><td class="admu_end"><a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=hide">[' . $hide_txt . ']</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=edit">[Edit]</a> <a href="##rootdir##' . $url . '?elink_mode=on">[ELink]</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=delete">[Delete]</a></td></tr>';
+			$f_hide = '';
+			if ($row[4])
+				$f_hide = ' class="edurl_hidden"';
+			
+			// TODO: display different icons for different file types
+			$img_src = '##pageroot##/icons/text.gif';
+			
+			// construct the information about the thing
+			// TODO: Allow changes of simple parameters here, like menu/banner/etc
+			$cur_directory_info .= "\n\t\t<tr$f_hide>" . '<td class="edurl_icon"><img src="' . $img_src . '" alt="' . htmlentities($url) . '" /></td><td class="admu_url"><a href="##rootdir##' . $url . '">' . htmlentities($fname) . '</td><td class="admu_title">' . htmlentities($row[1]) . '&nbsp;</td><td class="admu_mod_by">' . htmlentities($row[3]) . '</td><td class="admu_mod">' . date('m/d/Y g:ia',$row[2]) . '</td><td class="admu_end"><a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=hide">[' . $hide_txt . ']</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=edit">[Edit]</a> <a href="##rootdir##' . $url . '?elink_mode=on">[ELink]</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=delete">[Delete]</a></td></tr>';
 		}
 		
-		// finish this
-		$directories[] = $current . '</table>';
-		$d_tree[] = $old_dir;
+		// copy/pasted code from above.. 
+		// i wish this could somehow be a function.. 
+		$ed = explode('/',$old_dir);
 		
-		$nesting = 0;		// increment each time we go up a level (change directory)
-		$level = 0;
-		$extra = false;
+		// add parents to array, if they dont exist
+		for ($j = count($ed)-1;$j > 0;$j--){
+			$dir_slice = array_slice($ed,0,$j);
+			$dir_parent = implode($dir_slice,'/');
+			if (isset($dir_map[$dir_parent]))
+				break;	// parent exists
+			$directories[] = array('',$dir_slice,$dir_parent,"${id}_" . md5($dir_parent));
+			$dirs[] = $dir_parent;
+			$dir_map[$dir_parent] = count($directories)-1;
+		}
+	
+		// add to array
+		$directories[] = array($cur_directory_info,$ed,$old_dir,"${id}_" . md5($old_dir));
+		$dirs[] = $old_dir;
+		$dir_map[$old_dir] = count($directories)-1;
 		
-		// ok, render the tables and stuff now
-		for ($i = 0;$i < count($d_tree);$i++){
+		if ($shown_div_hash == "${id}_" . md5($old_dir))
+			$shown_div_found = true;
 		
-			$tree_count = count($d_tree[$i]);
-			if ($tree_count < 2)
-				$extra = true;			// add an extra div at the end
+		// make sure *something* is displayed
+		if ($shown_div_found == false)
+			$shown_div_hash = $directories[0][3];
 		
-			// the first level isn't nested
-			if ($i != 0)
-				$level = edurl_get_nesting($d_tree[$i-1],$d_tree[$i]);
+		// new variables
+		$i = -1;
+		$dircount = count($directories);
+		
+		// TODO: Add icons, file types
+		
+		// ok, render the tables and stuff now 
+		
+		foreach ($directories as $dir){
+			$i += 1;
 			
-			// if we need to go down the tree, do so
-			if ($level < $nesting)
-				echo str_repeat('</div>',$nesting-$level);
-			
-			// get the number of levels we need to go up
-			$num = $tree_count - $level - 2 ;
-			if ($num < 0)
-				$num = 0;	// str_repeat gives a warning if its > 0
-			
-			// go up that amount of levels
-			echo str_repeat('<div>',$num) . '<div class="adm_dir_header" id="' . $id . "_" . $i . "_hd\" onclick=\"admu_toggle('" . $id . "_" . $i . "');\" ";
-			
-			// add an expanding icon
-			if ($i != 0)
-				echo 'style="background: #eeeeee;"><span>+</span>';
+			// history feature -- set display type
+			if ($dir[3] == $shown_div_hash)
+				$display = 'block';
 			else
-				echo '><span>-</span>';
-			
-			$dirs[] = implode('/',$d_tree[$i]);
-			
-			echo htmlentities($dirs[$i]) . '</div><div class="adm_class" id="' . $id . "_" . $i . '" ';
+				$display = 'none';
+				
+			if ($dir[2] == "")
+				$dir[2] = '/';
+		
+			echo '<div id="' . $dir[3] . '" style="display:' . $display . '" ><span class="edurl_tab">' . htmlentities($dir[2]) . "</span>\n<div class=\"edurl_browser\"><table class=\"highlighted\">";
+		
+			// do this before we modify the array
+			$dir_level = count($dir[1]);
+		
+			// output a pointer to the parent directory -- crazy one-liner :)
 			if ($i != 0)
-				echo 'style="display:none"';
+				echo "\n\t\t" . '<tr onDblClick="switch_dir(\''. $dir[3] . "','" . $directories[$dir_map[implode(array_slice($dir[1],0,$dir_level-1),'/')]][3] . '\')"><td class="edurl_icon"><img src="##pageroot##/icons/folder.gif" alt="Parent Directory" /></td><td colspan="5">..</td></tr>';
 			
-			echo '>';
+			$last_dir = '';
 			
-			// determine the current nesting level
-			$nesting = $tree_count - 1;
+			// output all child directories first, with requisite id pointers
+			for ($j = $i + 1;$j < $dircount;$j++){
+				
+				// special case
+				$pos = strpos($directories[$j][2],$dir[2]);
+				
+				// directories are sorted, so we're done
+				if ($pos !== 0)
+					break;
+				
+				if ($last_dir != $directories[$j][1][$dir_level])
+					echo "\n\t\t" . '<tr onDblClick="switch_dir(\''. $dir[3] . "','" . $directories[$j][3] . '\')"><td class="edurl_icon"><img src="##pageroot##/icons/folder.gif" alt="' . htmlentities($directories[$j][1][$dir_level]) . '" /></td><td colspan="5">' . htmlentities($directories[$j][1][$dir_level]) . '</td></tr>';
 			
-			// output the table of URL's for that directory
-			echo $directories[$i];	
+				$last_dir = $directories[$j][1][$dir_level];
+			
+			}
+		
+			// then, output file entries
+			echo "$dir[0]\n\t</table>\n</div></div>";
+		
 		}
 		
-		// finish the nesting
-		echo str_repeat('</div>',$nesting) . ($extra ? '</div>' : '');
 		
 	}else{
 		echo "0 total pages";
@@ -416,20 +485,6 @@ function edurl_show_list($result,$id,$hide){
 	return $dirs;
 }
 
-// get nesting difference
-function edurl_get_nesting($old,$new){
-	
-	$nesting = -1;
-	
-	// compare each item, until we find the difference
-	for ($i = 0;$i < count($new);$i++){
-		if ($i >= count($old) || $new[$i] != $old[$i])
-			break;
-		$nesting += 1;
-	}
-	
-	return $nesting;
-}
 
 
 // shows more items

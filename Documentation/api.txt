@@ -12,7 +12,9 @@ HTML Special strings
 	##pageroot##		Root directory of current page
 	##banner##			Insert code for banner here
 	##title##			Insert page title here
-	##menu##			Insert menu list html here	
+	##menu##			Insert menu list html here
+	##db_queries##		Show number of database queries to retrieve page through db.inc.php
+	##time##			Amount of time it took to render the page
 	
 	##content##			Only valid in (and must be specified by) templates.
 						Inserts the content of the page at this spot.

@@ -87,6 +87,11 @@ function db_query($query, $nowdebug = false){
 	if ($cfg['debug'] == true || $nowdebug == true)
 		$cfg['db_last_sql_query'] = $query;
 	
+	if (isset($cfg['db_queries']))
+		$cfg['db_queries'] += 1;
+	else
+		$cfg['db_queries'] = 1;
+	
 	switch($cfg['db_type']){
 	
 		case "mysql": 	

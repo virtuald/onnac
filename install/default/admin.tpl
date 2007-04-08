@@ -12,7 +12,8 @@
 	<div id="adm_content">
 	##content##
 	</div>
-	<div id="adm_footer">Onnac &copy;2006-2007 Dustin Spicuzza &amp; contributors</div>
+	<div id="adm_footer">Onnac &copy;2006-2007 Dustin Spicuzza &amp; contributors<br/>
+	##db_queries## executed in ##time## seconds.</div>
 </div>
 </body>
 </html>

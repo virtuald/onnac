@@ -44,11 +44,11 @@ function applyHighlighting(){
 					if(trs[j].parentNode.nodeName=='TBODY' && trs[j].parentNode.nodeName!='TFOOT'){
 						trs[j].onmouseover=
 							function(){
-								this.className='highlighted';
+								this.className=this.className + 'highlighted';
 								return false;
 							}
 						trs[j].onmouseout=function(){
-							this.className='';
+							this.className=this.className.replace(/highlighted/,'');
 							return false;
 						}
 					}
@@ -56,6 +56,24 @@ function applyHighlighting(){
 			}
 		}
 	}
+}
+
+// taken from http://www.shawnolson.net/scripts/public_smo_scripts.js
+function changecss(theClass,element,value) {
+//documentation for this script at http://www.shawnolson.net/a/503/
+	var cssRules;
+	if (document.all) {
+		cssRules = 'rules';
+	}else if (document.getElementById) {
+		cssRules = 'cssRules';
+	}
+	for (var S = 0; S < document.styleSheets.length; S++){
+		for (var R = 0; R < document.styleSheets[S][cssRules].length; R++) {
+			if (document.styleSheets[S][cssRules][R].selectorText == theClass) {
+				document.styleSheets[S][cssRules][R].style[element] = value;
+			}
+		}
+	}	
 }
 
 attachOnload(window,applyHighlighting);
