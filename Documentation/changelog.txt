@@ -7,6 +7,7 @@
 	- Changed file management interface to be folder-oriented, as opposed to the old format
 	- Added ##db_queries## and ##time## to parameters
 	- Added ability to specify which ## parameters would actually be replaced
+	- Added ability to specify export filename
 
 0.0.9.1 (4/1/2007)
 ---------------------

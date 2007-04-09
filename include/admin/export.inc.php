@@ -46,13 +46,16 @@ function export_data(){
 
 ?><h4>Export data</h4>
 <form action="##pageroot##/?mode=export&action=export" method="post">
-	Export Type:
+	<table>
+	<tr><td>Export Type:</td><td>
 	<select name="type">
 		<option value="content" selected>Content</option>
 		<option value="templates">Templates Only</option>
 		<option value="users">Users</option>
-	</select><input type="checkbox" name="export_hidden" value="yes" />Export hidden data<br/>
-	Description: <input type="text" name="export_description" size="50" /><br/>
+	</select><input type="checkbox" name="export_hidden" value="yes" />Export hidden data</td></tr>
+	<tr><td>Description:</td><td><input type="text" name="export_description" size="50" /></td></tr>
+	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.osf" /></td></tr>
+	</table>
 	<input type="submit" value="Export" />
 </form>
 <p><a href="##pageroot##/">Return to administration menu</a></p>
@@ -261,9 +264,15 @@ function do_export($type,$output){
 	// export format
 	echo serialize($output);
 	
+	// get filename
+	$fName = urlencode(get_post_var('export_filename'));
+	if ($fName == "")
+		$fName = 'export.' . date("m-d-Y") . '.osf';
+		
+	
 	// formalities
 	header("Content-Type: application/octet-stream;");
-	header('Content-Disposition: attachment; filename="export.' . date("m-d-Y") . '.osf"');
+	header('Content-Disposition: attachment; filename="' . $fName . '"');
 	$cfg['output_replace'] = false;
 }
 
