@@ -42,13 +42,22 @@ function import_data(){
 	$action = get_get_var('action');
 	echo '<h4>Import Data</h4>';
 	
+	$mount_point = get_post_var('mount_point');
+	// validate this
+	if ($mount_point != "" && $mount_point{0} != '/'){
+		$action = "";
+		onnac_error("Invalid mount point specified! Must start with a '/'");
+	}
+	
 	if ($action == ""){
 	
 		// collection of links showing stuff that you can do
 		?>
 <form action="##pageroot##/?mode=import&action=import" enctype="multipart/form-data" method="post">
 	File to import: <input name="data" type="file" size="30"/><br/>
-	<input type="submit" value="Import" />
+	Mount point: <input name="mount_point" type="text" size="30" value="" /><br/>
+	<input type="submit" value="Import" /><br/>
+	<em>* Mount point is a value that is appended to all file names, including content and menu data</em>
 </form>
 <?php
 	
