@@ -8,6 +8,7 @@
 	- Added ##db_queries## and ##time## to parameters
 	- Added ability to specify which ## parameters would actually be replaced
 	- Added ability to specify export filename
+	- Added functionality to export entire rendered website (or just a directory) to a tar.gz file
 
 0.0.9.1 (4/1/2007)
 ---------------------

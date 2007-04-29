@@ -31,13 +31,9 @@
 
 // global rendering engine variables
 unset($render);
-$render['title'] = "";
-$render['menu'] = "";
-$render['banner'] = "";
-$render['template'] = "";
-$render['input_url'] = "";
 
-$perform_additional_subsitution = false;	// provides for a way to display ## variables... 
+global $perform_additional_substitution;
+$perform_additional_substitution = false;	// provides for a way to display ## variables... 
 
 // utility functions
 require_once('./include/util.inc.php');
@@ -51,20 +47,30 @@ require_once("./include/http304.inc.php");
 	
 	TODO: Merge SQL queries, possibly using a join?
 	
+	If simulate = true, then it will execute the necessary queries
+	to render the page and will return an array of ('filename','content','filetime','executable');
+	
 */
-function render_page($input_url, $error_url = 0){
+function render_page($input_url, $error_url = 0, $simulate = false){
 	
 	// globals -- this allows more flexibility, because we can include this from multiple files, and use multiple 
 	// databases and such... 
 	global $cfg, $render;
 	
+	// unset these
+	$render['title'] = "";
+	$render['menu'] = "";
+	$render['banner'] = "";
+	$render['template'] = "";
+	$render['input_url'] = "";
+	
 	// configure elink mode
 	$cfg['elink_mode'] = false;
-	if (get_get_var('elink_mode') == 'on')
+	if (get_get_var('elink_mode') == 'on' && $simulate == false)
 		$cfg['elink_mode'] = true;
 	$render['input_url'] = $input_url; 
 	
-	// this could potentially be a GAPING security hole..
+	// this could have been potentially be a GAPING security hole..
 	$input_url = db_escape_string($input_url);
 	
 	// get the last modified date of the page, db specific!
@@ -76,7 +82,7 @@ function render_page($input_url, $error_url = 0){
 			$errmsg .= " Message: " . db_error();
 				
 		show_internal_error($errmsg);
-		return;
+		return false;
 		
 	}else if (db_num_rows($result) != 1){
 		
@@ -86,7 +92,7 @@ function render_page($input_url, $error_url = 0){
 			$result = db_query("SELECT url FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url . '/') . "'");
 			if ($result && db_num_rows($result) == 1){			
 				header("Location: $cfg[rootURL]" . str_replace("%2F","/",str_replace("%2f","/",urlencode($input_url))) . "/");
-				return;
+				return false;
 			}
 		
 			// page does not exist!!! load the error page. redirect.. but first, send this header.  
@@ -98,7 +104,7 @@ function render_page($input_url, $error_url = 0){
 			header("Content-Type: text/plain");
 			echo "Error: Page " . htmlentities($error_url) . " not found!";
 		}
-		return;
+		return false;
 	}
 	
 	$row = db_fetch_row($result);
@@ -107,17 +113,22 @@ function render_page($input_url, $error_url = 0){
 	
 	// do not enable this stuff if the page is allowed to execute. Let it manually decide its
 	// own caching stuff.. 
-	if ($row && !$row[1] && !$cfg['elink_mode']){
-	
-		// of the two update dates, send the latest one to the client to ensure cache consistency
-		if ($row[0] > $row[2] && httpConditional($row[0],$input_url))
-			return;
-		else if ($row[0] <= $row[2] && httpConditional($row[2],$input_url))
-			return;
+	if (!$simulate){
+		if ($row && !$row[1] && !$cfg['elink_mode'] && !$simulate){
+		
+			// of the two update dates, send the latest one to the client to ensure cache consistency
+			if ($row[0] > $row[2] && httpConditional($row[0],$input_url))
+				return true;
+			else if ($row[0] <= $row[2] && httpConditional($row[2],$input_url))
+				return true;
+		}
+		
+		// set the current MIME type depending on the extension of the file we're serving
+		set_mime_type($input_url);
 	}
-
-	// set the current MIME type depending on the extension of the file we're serving
-	set_mime_type($input_url);
+	
+	// save this for later
+	$retdate = $row[0];
 	
 	// get the content of the page then -- we use a hash to access it with
 	$result = db_query("SELECT page_content,page_execute,page_title,menu_id,banner_id,template_id FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url) . "'");	
@@ -128,7 +139,7 @@ function render_page($input_url, $error_url = 0){
 			$errmsg .= " Message: " . db_error();
 				
 		show_internal_error($errmsg);
-		return;
+		return false;
 	}
 	
 	// grab the page content 
@@ -143,7 +154,8 @@ function render_page($input_url, $error_url = 0){
 		
 	// TODO: Inhibit counters on some pages
 	// update the page counter -- visited_count, last_visit
-	db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '" . md5($input_url) . "'");
+	if (!$simulate)
+		db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '" . md5($input_url) . "'");
 	
 	// check to see if we need to render a menu
 	if ($content[3] >= 0){
@@ -156,7 +168,7 @@ function render_page($input_url, $error_url = 0){
 				$errmsg .= " Message: " . db_error();
 					
 			show_internal_error($errmsg);
-			return;
+			return false;
 			
 		}else if (db_num_rows($result) > 0){
 		
@@ -191,7 +203,7 @@ function render_page($input_url, $error_url = 0){
 				$errmsg .= " Message: " . db_error();
 					
 			show_internal_error($errmsg);
-			return;
+			return false;
 			
 		}else if (db_num_rows($result) == 1){
 				
@@ -215,7 +227,8 @@ function render_page($input_url, $error_url = 0){
 				$errmsg .= " Message: " . db_error();
 					
 			show_internal_error($errmsg);
-			return;
+			return false;
+			
 		}else if (db_num_rows($result) != 1)
 			return show_internal_error("Error #X4 at " . htmlentities($input_url) . "!!!");
 
@@ -227,14 +240,19 @@ function render_page($input_url, $error_url = 0){
 	// signals the output handler
 	$cfg['output_replace'] = true;
 	
+	// simulation
+	if ($simulate)
+		return array($input_url,$content[0],$retdate,$content[1]);
+	
 	// do we need to interpret any PHP in the content? Do it here. This also echos out
 	// all the content as well, so we get two things in one package! :)
 	if ($content[1])
 		eval(';?>' . $content[0]);		// execute the php code on the page
 	else
 		echo $content[0];				// for portions of the site that don't need any dynamic content...
-	
-	
+		
+	return true;
+
 }
 
 /*
@@ -256,10 +274,10 @@ function show_internal_error($msg){
 	output_callback
 	
 	This callback is used to parse the outputted HTML and replace the necessary elements... 
-		TODO: Make some of these conditional, since this adds annoying load to the server
+		
 */
 
-function output_callback($buffer){
+function output_callback($buffer,$simulate = false){
 
 	global $render,$execution_time,$cfg,$perform_additional_substitution;
 
@@ -270,7 +288,7 @@ function output_callback($buffer){
 		$buffer = str_replace('##content##',$buffer,$render['template']);
 	
 		$render['pageroot'] = $cfg['page_root'];
-		$render['rootURL'] = $cfg['rootURL'];
+		$render['rootdir'] = $cfg['rootURL'];
 		$render['db_queries'] = $cfg['db_queries'];
 	
 		// TODO: There is probably a better way to do this
@@ -297,13 +315,15 @@ function output_callback($buffer){
 		
 		// do this at the last second
 		$buffer = str_replace('##time##',((int)((microtime_float() - $execution_time) * 1000))/1000,$buffer);
-		if ($perform_additional_subsitution == true)
+		if ($perform_additional_substitution == true)
 			$buffer = str_replace('#time#','##time##',$buffer);
 	}
 	
 	// Allows persistant connections
 	// http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13
-	header('Content-Length: '.strlen($buffer));
+	if (!$simulate)
+		header('Content-Length: '.strlen($buffer));
+		
 	return $buffer;
 
 }

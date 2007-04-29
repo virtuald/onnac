@@ -34,6 +34,8 @@
 	
 */
 
+require('./include/tar.inc.php');
+
 
 function export_data(){
 
@@ -41,11 +43,12 @@ function export_data(){
 		
 	$action = get_get_var('action');
 	$type = get_post_var('type');
+	$gzip = get_get_var('gzip');
 	
 	if ($action == ""){
 
-?><h4>Export data</h4>
-<form action="##pageroot##/?mode=export&action=export" method="post">
+?><h4>Export data (single file, can be imported again)</h4>
+<form action="##pageroot##/?mode=export&amp;action=export" method="post">
 	<table>
 	<tr><td>Export Type:</td><td>
 	<select name="type">
@@ -57,6 +60,42 @@ function export_data(){
 	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.osf" /></td></tr>
 	</table>
 	<input type="submit" value="Export" />
+</form>
+<h4>Export as rendered HTML files (tar.gz file, cannot be imported again)</h4>
+<form action="##pageroot##/?mode=export&amp;action=export" method="post">
+	<table>
+	<tr><td>Directory</td><td><select name="directory"><?php
+	
+	$result = db_query("SELECT url from $cfg[t_content] ORDER BY url");
+	
+	// first, assemble three arrays of file information
+	if (db_has_rows($result)){
+	
+		$last_dir = '/';
+	
+		while ($row = db_fetch_row($result)){
+		
+			// directory names, without trailing /
+			$dirname = dirname($row[0] . 'x');
+			if ($dirname == '\\' || $dirname == '/')
+				$dirname = '';
+			
+			
+			if ($last_dir != $dirname){
+				if ($last_dir != '')
+					echo "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";
+			
+				$last_dir = $dirname;
+			}
+		}
+	}
+	
+	?></select>
+	<input type="checkbox" name="export_hidden" value="yes" />Export hidden data</td></tr>
+	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.tar.gz" /></td></tr>
+	</table>
+	<input type="hidden" name="type" value="gzip" />
+	<input type="submit" value="Export HTML" />
 </form>
 <p><a href="##pageroot##/">Return to administration menu</a></p>
 <?php
@@ -72,10 +111,15 @@ function export_data(){
 			case "templates":
 				export_templates();
 				break;
-				
+			
+			case "gzip":
+				export_gzip();
+				break;
+			
 			//case "users":
 			//	export_users();
 			//	break;
+			
 				
 			default:
 				echo "<h4>Export Data</h4><p>Export type not supported at this time.</p>";
@@ -84,6 +128,66 @@ function export_data(){
 		header("Location: $cfg[page_root]?mode=export");	
 	}
 }
+
+function export_gzip(){
+
+	global $cfg;
+
+	$directory = get_post_var('directory');
+	if ($directory == "")
+		return onnac_error("No directory specified!");
+	
+	// make special provision for hidden data
+	$export_hidden = "";
+	if (get_post_var('export_hidden') != "yes")
+		$export_hidden = "AND hidden <> 1 ";
+	
+
+	// get filenames first
+	$result = db_query("SELECT url FROM $cfg[t_content] WHERE url LIKE '" . db_escape_string($directory) . "%' $export_hidden ORDER BY url");
+	
+	if (db_has_rows($result)){
+	
+		$files = array();
+	
+		while ($row = db_fetch_row($result)){
+		
+			// render them over and over again
+			$content = render_page($row[0],0,true);
+			if ($content === false)
+				return onnac_error("Could not render page &quot;" . htmlentities($row[0]) . "&quot;");
+			
+			$content[1] = output_callback($content[1],true);
+			
+			// mangle the filename if need be
+			// WARNING: This could cause problems if someone already has an index page.. 
+			if ($content[0][strlen($content[0])-1] == '/')
+				if ($content[3])
+					$content[0] .= 'index.php';
+				else
+					$content[0] .= 'index.html';
+			
+			// remove first character
+			$content[0] = substr($content[0],1,strlen($content[0]));
+			
+			
+			// add to array
+			$files[] = $content;
+		}
+		
+		// get file name
+		$fName = urlencode(get_post_var('export_filename'));
+		if ($fName == "")
+			$fName = 'export.' . date("m-d-Y") . '.tar.gz';
+		
+		// output as tgz file
+		output_tar_file($files,$fName);
+	
+	}else{
+		return onnac_error("No files found in directory to export.");
+	}
+}
+
 
 function export_content(){
 
