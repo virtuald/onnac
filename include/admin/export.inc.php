@@ -167,8 +167,8 @@ function export_gzip(){
 				else
 					$content[0] .= 'index.html';
 			
-			// remove first character
-			$content[0] = substr($content[0],1,strlen($content[0]));
+			// remove directory name
+			$content[0] = substr($content[0],strlen($directory)+1);
 			
 			
 			// add to array
