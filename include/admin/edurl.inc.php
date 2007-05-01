@@ -82,7 +82,13 @@ function edurl($error = "no"){
 	var hiddenShown = false;
 	function show_hidden_files(){
 		if (!hiddenShown){
-			changecss('.edurl_hidden','display','block');
+			try{
+				// proper selector for firefox/CSS2 browsers
+				changecss('.edurl_hidden','display','table-row');
+			}catch(err){
+				// hack for IE
+				changecss('.edurl_hidden','display','block');
+			}
 			document.getElementById('show_hidden_files').innerHTML = "Hide hidden files";
 		}else{
 			changecss('.edurl_hidden','display','none');
