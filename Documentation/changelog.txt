@@ -3,6 +3,7 @@
 	- Fixed: Menu ordering did not work properly if order fields were same values
 	- Fixed: Menus were all initially inserted with the same order field
 	- Fixed: Installer did not create tables correctly in MySQL 4.0
+	- Fixed: Hidden items had a 'hide' link next to them in the Content editor, instead of 'show'
 	- Installer now shows database server version (if possible, postgre can only do in in PHP 5)
 	- Changed file management interface to be folder-oriented, as opposed to the old format
 	- Added ##db_queries## and ##time## to parameters

@@ -102,7 +102,7 @@ function edurl($error = "no"){
 	
 		$result = db_query("SELECT url,page_title," . db_get_timestamp_query("last_update") . ",last_update_by,hidden FROM $cfg[t_content] ORDER BY url ASC");
 		
-		$directories = edurl_show_list($result,'edurl_shown',1);
+		$directories = edurl_show_list($result,'edurl_shown');
 		
 		// combine directory list and show add items
 		edurl_show_add_to_dir($directories,'template');
@@ -270,7 +270,7 @@ function edurl($error = "no"){
 		   the array mentioned above
 
 */
-function edurl_show_list($result,$id,$hide){
+function edurl_show_list($result,$id){
 
 	echo "<div id=\"$id\">";
 
@@ -280,11 +280,6 @@ function edurl_show_list($result,$id,$hide){
 	
 		// seperate it out into directories too!
 		$rows = 0;
-	
-		if ($hide)
-			$hide_txt = "Hide";
-		else
-			$hide_txt = "Show";
 	
 		echo '<p>' . db_num_rows($result) . " total pages</p>";
 
@@ -383,8 +378,12 @@ function edurl_show_list($result,$id,$hide){
 			$fname = $t_file[$i] == '' ? '/' : $t_file[$i];
 			
 			$f_hide = '';
-			if ($row[4])
+			if ($row[4]){
 				$f_hide = ' class="edurl_hidden"';
+				$hide_txt = 'Show';
+			}else{
+				$hide_txt = 'Hide';
+			}
 			
 			// TODO: display different icons for different file types
 			$img_src = '##pageroot##/icons/text.gif';
