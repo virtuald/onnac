@@ -12,22 +12,40 @@ Contents
 	4. Importing from other CMS
 
 
-1. Exporting Data
----------------
 
-Onnac exports data by creating an array of variables from the contents of the
-database, and then uses the PHP function serialize() to create a text stream of
-data and send it back to a browser. 
+	
+1.1 Export data in OSF format
+------------------------------
+
+OSF is Onnac's custom format. Onnac exports data by creating an array of variables
+from the contents of the database, and then uses the PHP function serialize() 
+to create a text stream of data and send it back to a browser. Look at 
+include/admin/export.inc.php for more details, its pretty simplistic.
 
 In the administration interface provided with Onnac, one of the menu options is
-'Import/Export Site'. When you go to this page, then you will be provided with
+'Export Site Data'. When you go to this page, then you will be provided with
 options that will allow you to export most of the data of the database into a 
 file that can later be imported back into Onnac if you desire.
+
+
+1.2 Export in HTML format
+--------------------------
+
+NEW! Onnac can now export data to HTML format. It will export it in a tar.gz file,
+which you can untar to a directory and just use the static webpages. There is one
+caveat however:
+
+	- files that end in / will be named index.html if not executable and index.php
+	if it is executable. If there is already a file called index.html or index.php
+	then the behavior is undefined at the moment. Of course, if you have a file
+	with / at the end of it, then index files are quite pointless.. :)
+
 
 2. Importing Data
 ---------------
 
-Onnac can import data that was exported from the same version of Onnac. 
+Onnac can import data that was exported in a format it recognizes. At the moment, the
+only major incompatibilities exist in versions of Onnac prior to 0.0.9.
 
 
 3. In the event of corruption

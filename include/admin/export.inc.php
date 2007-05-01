@@ -55,7 +55,7 @@ function export_data(){
 		<option value="content" selected>Content</option>
 		<option value="templates">Templates Only</option>
 		<option value="users">Users</option>
-	</select><input type="checkbox" name="export_hidden" value="yes" />Export hidden data</td></tr>
+	</select><input type="checkbox" name="export_hidden" value="yes" checked />Export hidden data</td></tr>
 	<tr><td>Description:</td><td><input type="text" name="export_description" size="50" /></td></tr>
 	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.osf" /></td></tr>
 	</table>
@@ -91,7 +91,7 @@ function export_data(){
 	}
 	
 	?></select>
-	<input type="checkbox" name="export_hidden" value="yes" />Export hidden data</td></tr>
+	<input type="checkbox" name="export_hidden" value="yes" checked />Export hidden data</td></tr>
 	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.tar.gz" /></td></tr>
 	</table>
 	<input type="hidden" name="type" value="gzip" />
@@ -141,7 +141,6 @@ function export_gzip(){
 	$export_hidden = "";
 	if (get_post_var('export_hidden') != "yes")
 		$export_hidden = "AND hidden <> 1 ";
-	
 
 	// get filenames first
 	$result = db_query("SELECT url FROM $cfg[t_content] WHERE url LIKE '" . db_escape_string($directory) . "%' $export_hidden ORDER BY url");
