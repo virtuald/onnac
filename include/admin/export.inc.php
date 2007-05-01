@@ -80,7 +80,6 @@ function export_data(){
 			if ($dirname == '\\' || $dirname == '/')
 				$dirname = '';
 			
-			
 			if ($last_dir != $dirname){
 				if ($last_dir != '')
 					echo "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";
@@ -88,6 +87,9 @@ function export_data(){
 				$last_dir = $dirname;
 			}
 		}
+		
+		if ($last_dir != '')
+			echo "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";		
 	}
 	
 	?></select>
@@ -149,6 +151,10 @@ function export_gzip(){
 	
 		$files = array();
 	
+		$dirlen = strlen($directory);
+		if ($dirlen > 1)
+			$dirlen += 1;
+	
 		while ($row = db_fetch_row($result)){
 		
 			// render them over and over again
@@ -167,8 +173,7 @@ function export_gzip(){
 					$content[0] .= 'index.html';
 			
 			// remove directory name
-			$content[0] = substr($content[0],strlen($directory)+1);
-			
+			$content[0] = substr($content[0],$dirlen);
 			
 			// add to array
 			$files[] = $content;

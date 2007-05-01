@@ -55,26 +55,18 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	
 	// globals -- this allows more flexibility, because we can include this from multiple files, and use multiple 
 	// databases and such... 
-	global $cfg, $render;
+	global $cfg, $render; 
 	
-	// unset these
-	$render['title'] = "";
-	$render['menu'] = "";
-	$render['banner'] = "";
-	$render['template'] = "";
-	$render['input_url'] = "";
+	$safe_input_url = db_escape_string($input_url);
+	$input_url_md5 = md5($safe_input_url);				// cache this
 	
-	// configure elink mode
-	$cfg['elink_mode'] = false;
-	if (get_get_var('elink_mode') == 'on' && $simulate == false)
-		$cfg['elink_mode'] = true;
-	$render['input_url'] = $input_url; 
-	
-	// this could have been potentially be a GAPING security hole..
-	$input_url = db_escape_string($input_url);
-	
+	// optimization: get two rows here so we don't have to make another query
 	// get the last modified date of the page, db specific!
-	$result = db_query("SELECT " . db_get_timestamp_query("last_update") . ",page_execute," . db_get_timestamp_query("other_update") . " FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url) . "'");
+	
+	// TODO: Add index.htm/etc support
+	
+	// get the content of the page then -- we use a hash to access it with
+	$result = db_query("SELECT url_hash," . db_get_timestamp_query("last_update") . "," . db_get_timestamp_query("other_update") . ",page_execute,page_content,page_title,menu_id,banner_id,template_id FROM $cfg[t_content] WHERE url_hash = '$input_url_md5' OR url_hash = '" . md5($safe_input_url . '/') . "'");
 	
 	if (!$result){
 		$errmsg = "#R0, unspecified database error at " . htmlentities($input_url) ."!";
@@ -82,44 +74,66 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 			$errmsg .= " Message: " . db_error();
 				
 		show_internal_error($errmsg);
-		return false;
+		return false;	
+	}
+	
+	// get the rows -- this could return two rows
+	$num_rows = db_num_rows($result);
+	$content = false;
+	$is_404 = true;
+	
+	while($row = db_fetch_row($result)){
 		
-	}else if (db_num_rows($result) != 1){
+		// is it the requested page?
+		if ($row[0] == $input_url_md5){
+			$is_404 = false;
+			$content = $row;
+			break;
+			
+		// or did we find the redirect?
+		}else if ($row[0] == md5($safe_input_url . '/')){
+			$is_404 = false;
+		}
+	}
+	
+	
+	if ($is_404){
 		
 		if ($error_url == 0){
-		
-			// redirect to a directory, if it exists
-			$result = db_query("SELECT url FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url . '/') . "'");
-			if ($result && db_num_rows($result) == 1){			
-				header("Location: $cfg[rootURL]" . str_replace("%2F","/",str_replace("%2f","/",urlencode($input_url))) . "/");
-				return false;
-			}
-		
+			
 			// page does not exist!!! load the error page. redirect.. but first, send this header.  
 			header("HTTP/1.x 404 Not Found");
 			render_page($cfg['page_404'],$input_url);
 		
 		}else{
-			// a stupid simple message... 
-			header("Content-Type: text/plain");
-			echo "Error: Page " . htmlentities($error_url) . " not found!";
+		
+			// send a simple not found message... header has already been sent
+			echo "<html><title>Not Found</title><body><h1>Not Found</h1><p>The requested URL " . htmlentities($error_url) . " was not found</p><p>Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.</p>";
+			echo "<hr><address>Powered by Onnac $cfg[onnac_version]</address></body></html>";
+			
 		}
+		
 		return false;
+		
+	}else if ($content === false){
+
+		header("Location: $cfg[rootURL]" . str_replace("%2F","/",str_replace("%2f","/",urlencode($input_url))) . "/");
+		return false;
+	
 	}
 	
-	$row = db_fetch_row($result);
 	
 	// TODO: Optimize the caching stuff.. 
 	
 	// do not enable this stuff if the page is allowed to execute. Let it manually decide its
-	// own caching stuff.. 
+	// own caching stuff, if need be.. 
 	if (!$simulate){
-		if ($row && !$row[1] && !$cfg['elink_mode'] && !$simulate){
+		if (!$content[1] && !$cfg['elink_mode']){
 		
 			// of the two update dates, send the latest one to the client to ensure cache consistency
-			if ($row[0] > $row[2] && httpConditional($row[0],$input_url))
+			if ($content[1] > $content[2] && httpConditional($content[1],$input_url))
 				return true;
-			else if ($row[0] <= $row[2] && httpConditional($row[2],$input_url))
+			else if ($content[1] <= $content[2] && httpConditional($content[2],$input_url))
 				return true;
 		}
 		
@@ -128,39 +142,38 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	}
 	
 	// save this for later
-	$retdate = $row[0];
+	$retdate = $content[1];
 	
-	// get the content of the page then -- we use a hash to access it with
-	$result = db_query("SELECT page_content,page_execute,page_title,menu_id,banner_id,template_id FROM $cfg[t_content] WHERE url_hash = '" . md5($input_url) . "'");	
-	
-	if (!$result){
-		$errmsg = "#R1, unspecified database error at " . htmlentities($input_url) ."!";
-		if ($cfg['debug'] == true)
-			$errmsg .= " Message: " . db_error();
-				
-		show_internal_error($errmsg);
-		return false;
-	}
-	
-	// grab the page content 
-	$content = db_fetch_row($result);
-	
-	if (!$content)
-		return show_internal_error("Could not retrieve content. Please try again.");
-		
-	$render['banner'] = "";
+	// ok, more initialization here
 	$render['menu'] = "";
-	$render['title'] = $content[2];
-		
+	$render['banner'] = "";
+	$render['template'] = "";
+	$render['title'] = $content[5];
+	$render['input_url'] = $input_url;
+	
+	// determine the page root from the passed URL
+	// this is here now instead of in index to facilitate HTML exporting :)
+	$pos = strrpos($input_url,'/');
+	if ($pos === false)
+		$cfg['page_root'] = $cfg['rootURL'];
+	else
+		$cfg['page_root'] = $cfg['rootURL'] . substr($input_url,0,$pos);
+	
+	// configure elink mode
+	$cfg['elink_mode'] = false;
+	if (get_get_var('elink_mode') == 'on' && $simulate == false)
+		$cfg['elink_mode'] = true;
+	
+	
 	// TODO: Inhibit counters on some pages
 	// update the page counter -- visited_count, last_visit
 	if (!$simulate)
-		db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '" . md5($input_url) . "'");
+		db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '$input_url_md5'");
 	
 	// check to see if we need to render a menu
-	if ($content[3] >= 0){
+	if ($content[6] >= 0){
 		// get menu
-		$result = db_query("SELECT mit.href,mit.text,mgt.rank FROM $cfg[t_menu_items] mit,$cfg[t_menu_groups] mgt,$cfg[t_content] ct WHERE ct.url_hash = '" . md5($input_url) . "' AND ct.menu_id = mgt.menu_id AND mgt.item_id = mit.item_id ORDER BY mgt.rank ASC");
+		$result = db_query("SELECT mit.href,mit.text,mgt.rank FROM $cfg[t_menu_items] mit,$cfg[t_menu_groups] mgt WHERE mgt.menu_id = $content[6] AND mgt.item_id = mit.item_id ORDER BY mgt.rank ASC");
 		
 		if (!$result){
 			$errmsg = "#R2, unspecified database error at " . htmlentities($input_url) ."!";
@@ -183,9 +196,9 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	}
 	
 	// check to see if we need to get a banner
-	if ($content[4] >= 0){
+	if ($content[7] >= 0){
 		// select a random banner image from the db
-		$query = "SELECT bit.src,bit.alt FROM $cfg[t_banner_items] bit, $cfg[t_banner_groups] bgt, $cfg[t_content] ct WHERE ct.url_hash = '" . md5($input_url) . "' AND ct.banner_id = bgt.banner_id AND bgt.item_id = bit.item_id ORDER BY ";
+		$query = "SELECT bit.src, bit.alt FROM $cfg[t_banner_items] bit, $cfg[t_banner_groups] bgt WHERE  bgt.banner_id = $content[7] AND bgt.item_id = bit.item_id ORDER BY ";
 		
 		if ($cfg['db_type'] == "mysql")
 			$query .= "RAND() LIMIT 1";
@@ -214,11 +227,11 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	}
 	
 	// some pages just have a blank template
-	if ($content[5] == -1){
+	if ($content[8] < 0){
 		$render['template'] = "##content##";
 	}else{
 		// get template
-		$result = db_query("SELECT tt.template FROM $cfg[t_templates] tt, $cfg[t_content] ct WHERE ct.url_hash = '" . md5($input_url) . "' AND ct.template_id = tt.template_id");
+		$result = db_query("SELECT template FROM $cfg[t_templates] WHERE template_id = $content[8]");
 		
 		// if invalid template specified, then we should fail
 		if (!$result){
@@ -242,14 +255,14 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	
 	// simulation
 	if ($simulate)
-		return array($input_url,$content[0],$retdate,$content[1]);
+		return array($input_url,$content[4],$retdate,$content[3]);
 	
 	// do we need to interpret any PHP in the content? Do it here. This also echos out
 	// all the content as well, so we get two things in one package! :)
-	if ($content[1])
-		eval(';?>' . $content[0]);		// execute the php code on the page
+	if ($content[3])
+		eval(';?>' . $content[4]);		// execute the php code on the page
 	else
-		echo $content[0];				// for portions of the site that don't need any dynamic content...
+		echo $content[4];				// for portions of the site that don't need any dynamic content...
 		
 	return true;
 
