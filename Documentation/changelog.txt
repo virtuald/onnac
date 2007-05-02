@@ -11,6 +11,7 @@
 	- Added ability to specify which ## parameters would actually be replaced
 	- Added ability to specify export filename
 	- Added functionality to export entire rendered website (or just a directory) to a tar.gz file
+	- Updated FCKEditor to 2.4.2
 
 0.0.9.1 (4/1/2007)
 ---------------------
