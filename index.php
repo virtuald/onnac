@@ -105,13 +105,6 @@ if (!$dbCon){
 	if (strstr($input_url,$cfg['basedir']) || substr($input_url,0,2) == "//")
 		$input_url = "";
 	
-	// determine the page root from the passed URL
-	$pos = strrpos($input_url,'/');
-	if ($pos === false)
-		$cfg['page_root'] = $cfg['rootURL'];
-	else
-		$cfg['page_root'] = $cfg['rootURL'] . substr($input_url,0,$pos);
-	
 	// render the page
 	render_page($input_url);
 	
