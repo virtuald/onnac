@@ -1,5 +1,5 @@
 a:9:{s:7:"content";a:4:{i:0;a:10:{s:8:"url_hash";s:32:"6666cd76f96956469e7be39d750cc7d9";s:3:"url";s:1:"/";s:12:"page_execute";i:0;s:6:"hidden";i:0;s:10:"page_title";s:22:"Onnac CMS Default Page";s:12:"page_content";s:216:"<h4>Welcome to Onnac!</h4>
-<p>Currently, there is no content on this website. You can add content at the <a href="##rootdir##/interface/">Onnac Website Administration Interface</a>. Thank you for choosing Onnac!</p>";s:11:"last_update";i:1167973867;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:1;a:10:{s:8:"url_hash";s:32:"308587b793cf5791bb6305992995693e";s:3:"url";s:14:"/error403.html";s:12:"page_execute";i:0;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:82:"<h3>403 - Access Denied!</h3><p>There was an error trying to access this page!</p>";s:11:"last_update";i:1167973867;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:2;a:10:{s:8:"url_hash";s:32:"26907e3bbb208e3f309c2c3223479312";s:3:"url";s:14:"/error404.html";s:12:"page_execute";i:1;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:2501:"<?php
+<p>Currently, there is no content on this website. You can add content at the <a href="##rootdir##/interface/">Onnac Website Administration Interface</a>. Thank you for choosing Onnac!</p>";s:11:"last_update";i:1167973867;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:1;a:10:{s:8:"url_hash";s:32:"308587b793cf5791bb6305992995693e";s:3:"url";s:14:"/error403.html";s:12:"page_execute";i:0;s:6:"hidden";i:0;s:10:"page_title";s:3:"403";s:12:"page_content";s:82:"<h3>403 - Access Denied!</h3><p>There was an error trying to access this page!</p>";s:11:"last_update";i:1167973867;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:2;a:10:{s:8:"url_hash";s:32:"26907e3bbb208e3f309c2c3223479312";s:3:"url";s:14:"/error404.html";s:12:"page_execute";i:1;s:6:"hidden";i:0;s:10:"page_title";s:3:"404";s:12:"page_content";s:2599:"<?php
 /*
 * Copyright (c) 2006, Dustin Spicuzza
 * All rights reserved.
@@ -28,7 +28,7 @@ a:9:{s:7:"content";a:4:{i:0;a:10:{s:8:"url_hash";s:32:"6666cd76f96956469e7be39d7
 */
 
 	// record this error somewhere... 
-	global $cfg;
+	global $cfg,$render;
 	
 	// referer, remote_ip_addr, error_url, timestamp
 
@@ -52,9 +52,11 @@ a:9:{s:7:"content";a:4:{i:0;a:10:{s:8:"url_hash";s:32:"6666cd76f96956469e7be39d7
 		$error_url = "";
 	}
 	
+	$render['title'] = '##rootdir##' . htmlentities($error_url) . ' could not be found!';
 
-?><h3>404 - File not found!</h3>
-<p>Oops! You tried to access <strong>##rootdir##<?php echo htmlentities($error_url);?></strong>, and this does not exist! If you linked here from another website, please remind them to update their links. If it was from our website, then please notify us about this error! Thanks!</p>";s:11:"last_update";i:1169336483;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:3;a:10:{s:8:"url_hash";s:32:"40b4817880d54c22d26423c0237a3b31";s:3:"url";s:11:"/interface/";s:12:"page_execute";i:1;s:6:"hidden";i:1;s:10:"page_title";s:34:"### Onnac Administration Interface";s:12:"page_content";s:5073:"<?php
+?>
+<h3>404 - File not found!</h3>
+<p>Oops! You tried to access <strong>##rootdir##<?php echo htmlentities($error_url);?></strong>, and this does not exist! If you linked here from another website, please remind them to update their links. If it was from our website, then please notify us about this error! Thanks!</p>";s:11:"last_update";i:1178471097;s:13:"template_name";s:7:"Default";s:11:"banner_name";s:0:"";s:9:"menu_name";s:0:"";}i:3;a:10:{s:8:"url_hash";s:32:"40b4817880d54c22d26423c0237a3b31";s:3:"url";s:11:"/interface/";s:12:"page_execute";i:1;s:6:"hidden";i:1;s:10:"page_title";s:34:"### Onnac Administration Interface";s:12:"page_content";s:5073:"<?php
 /*
 * Copyright (c) 2006-2007, Dustin Spicuzza
 * All rights reserved.
@@ -245,4 +247,4 @@ switch ($mode){
 </body>
 </html>
 
-";s:11:"last_update";i:1175959252;}}s:7:"banners";a:0:{}s:5:"menus";a:0:{}s:8:"dumptype";s:7:"content";s:11:"export_date";s:31:"Sun, 08 Apr 2007 03:32:20 -0400";s:14:"export_version";i:2;s:18:"export_description";s:23:"Onnac installation file";s:13:"onnac_version";s:7:"0.0.9.2";}
+";s:11:"last_update";i:1175959252;}}s:7:"banners";a:0:{}s:5:"menus";a:0:{}s:8:"dumptype";s:7:"content";s:11:"export_date";s:31:"Sun, 06 May 2007 13:06:47 -0400";s:14:"export_version";i:2;s:18:"export_description";s:23:"Onnac installation file";s:13:"onnac_version";s:7:"0.0.9.2";}

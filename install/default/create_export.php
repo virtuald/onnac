@@ -40,7 +40,7 @@ $files = array();
 //$files[] = array(filename,url,page_execute,hidden,page_title,template_name,banner_name,menu_name)
 $files[] = array("index.html",'/',0,0,'Onnac CMS Default Page','Default','','');
 $files[] = array("error403.html",'/error403.html',0,0,'403','Default','','');
-$files[] = array("error404.html",'/error404.html',1,0,'403','Default','','');
+$files[] = array("error404.html",'/error404.html',1,0,'404','Default','','');
 $files[] = array("admin.php",'/interface/',1,1,'### Onnac Administration Interface','Admin','','');
 
 
