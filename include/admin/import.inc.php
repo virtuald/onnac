@@ -56,9 +56,9 @@ function import_data(){
 		?>
 <form action="##pageroot##/?mode=import&action=import" enctype="multipart/form-data" method="post">
 	File to import: <input name="data" type="file" size="30"/><br/>
-	<!--Mount point: <input name="mount_point" type="text" size="30" value="" /><br/>
+	<!--Mount point: <input name="mount_point" type="text" size="30" value="" /><br/>-->
 	<input type="submit" value="Import" /><br/>
-	<em>* Mount point is a value that is appended to all file names, including content and menu data</em>-->
+	<!--<em>* Mount point is a value that is appended to all file names, including content and menu data</em>-->
 </form>
 <?php
 	
