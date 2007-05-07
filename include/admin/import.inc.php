@@ -41,13 +41,14 @@ function import_data(){
 	
 	$action = get_get_var('action');
 	echo '<h4>Import Data</h4>';
-	
-	$mount_point = get_post_var('mount_point');
+
+	// TODO: Mount points
+/*	$mount_point = get_post_var('mount_point');
 	// validate this
 	if ($mount_point != "" && $mount_point{0} != '/'){
 		$action = "";
 		onnac_error("Invalid mount point specified! Must start with a '/'");
-	}
+	}*/
 	
 	if ($action == ""){
 	
@@ -55,9 +56,9 @@ function import_data(){
 		?>
 <form action="##pageroot##/?mode=import&action=import" enctype="multipart/form-data" method="post">
 	File to import: <input name="data" type="file" size="30"/><br/>
-	Mount point: <input name="mount_point" type="text" size="30" value="" /><br/>
+	<!--Mount point: <input name="mount_point" type="text" size="30" value="" /><br/>
 	<input type="submit" value="Import" /><br/>
-	<em>* Mount point is a value that is appended to all file names, including content and menu data</em>
+	<em>* Mount point is a value that is appended to all file names, including content and menu data</em>-->
 </form>
 <?php
 	
@@ -281,6 +282,8 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 function import_content($imported,$user_approved,$install_mode){
 	
 	global $auth,$cfg;
+	
+	$mount_point = get_post_var('mount_point');
 	
 	if (!$install_mode)
 		$username = $auth->username;

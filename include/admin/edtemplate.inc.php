@@ -33,18 +33,14 @@ function edtemplate($error = "no"){
 
 	global $cfg;
 	
-	// make db connection
-	if ($error == "no"){
-		
-		echo "<h4>Edit page templates</h4>";
-	
-	}
-	
 	// get variables
 	$template_id = get_get_var('template_id');
 	$template_name = get_get_var('template_name');
 	$ed_action = get_get_var('ed_action');
+	$ajax = get_get_var('ajax');
 	
+	if ($error == "no" && $ajax != 'true')
+		echo "<h4>Template Editor</h4>";
 	
 	if ($template_id == "" || $error == "shownew"){
 	
@@ -168,7 +164,7 @@ function edtemplate($error = "no"){
 			case "change":
 			
 				// create the new page
-				edtemplate_add_data($template_id);
+				edtemplate_add_data($template_id,$ajax == 'true' ? false : true);
 				break;
 				
 			default:
@@ -192,20 +188,21 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 	
 ?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
 <script type="text/javascript" src="##pageroot##/codepress/codepress.js"></script>
+<script type="text/javascript" src="##pageroot##/tw-sack.js"></script>
 <script type="text/javascript"><!--
 	/*
 		Codepress functions
 	*/
 	var curEditor = '';
 	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
-	var cpLoaded = false;
+	var ajax = new sack();
 	
 	function getCode() {
 		return cp.getCode();
 	}
 	
 	function setCode(text) {
-		var oElement = document.forms['edtemplate_editor'].editor_syntax;
+		var oElement = document.getElementById('editor_syntax');
 		var lang = oElement.options[oElement.selectedIndex].value;
 		cp.setCode(text,lang);
 	}
@@ -225,17 +222,78 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 		var cpi = document.getElementById('cp_container');
 		cpi.innerHTML = '<text' + 'area id="cp" class="codepress html">' + initialCode + '</text' + 'area>';
 		CodePress.run();
-		document.forms['edtemplate_editor'].editor_syntax.options[1].selected = true;
+		cp.setSaveHandler(saveBegin);
+		document.getElementById('editor_syntax').options[1].selected = true;
 	}
 
 	attachOnload(window,ed_load);
+	
+	// keystroke stuff
+	if (window.addEventListener)
+		window.addEventListener('keypress', saveHandler, true);
+	else
+		document.attachEvent('onkeydown', saveHandler);
+		
+	function saveHandler(e){
+		
+		if (!e) var e = window.event;
+		
+		// catch CTRL-S
+		if((e.charCode !== undefined ? e.charCode == 115 : e.keyCode == 83) && e.ctrlKey) {
+			
+			saveBegin();
+			if (e.preventDefault)
+				e.preventDefault();
+			else
+				e.returnValue = false;
+		}
+	}
+	
+	var saving = false;
+	
+	// called on save
+	function saveBegin(){
+		if (saving)
+			return false;
+	
+		saving = true;
+	
+		var edArea = document.getElementById('adm_edarea_save');
+		edArea.innerHTML = 'Saving...';
+		edArea.style.display = 'block';
+		
+		var oElement = document.forms['edtemplate_editor'];
+		
+		// set all the appropriate variables
+		ajax.setVar('edtemplate_content',getCode());
+		ajax.setVar('edtemplate_name',oElement.edtemplate_name.value);
+		
+		ajax.requestFile = "##pageroot##/?mode=edtemplate&template_id=<?php echo htmlentities($template_id);?>&ed_action=change&ajax=true";
+		ajax.method = 'POST';
+		ajax.element = 'adm_edarea_save';
+		ajax.onCompletion = saveComplete;
+		ajax.runAJAX();
+		
+		return false;
+	}
+	
+	function saveComplete(){
+		saving = false;
+		execJS(document.getElementById('adm_edarea_save'));	// execute any script elements
+	}
 
 	function formSubmit(){
 		document.edtemplate_editor.edtemplate_content.value = getCode();
+		document.edtemplate_editor.submit();
 	}
 	
-//--></script><form name="edtemplate_editor" action="##pageroot##/?mode=edtemplate&amp;template_id=<?php echo htmlentities($template_id);?>&amp;ed_action=change" method="post" onsubmit="formSubmit()"><p>Template Name <input type="text" name="edtemplate_name" size="50" value="<?php echo htmlentities($template_name); ?>"/>
-<input type="hidden" value="" name="edtemplate_content"/></p>
+//--></script>
+
+<form name="edtemplate_editor" action="##pageroot##/?mode=edtemplate&amp;template_id=<?php echo htmlentities($template_id);?>&amp;ed_action=change" method="post" onsubmit="formSubmit()">
+	Template Name <input type="text" name="edtemplate_name" size="50" value="<?php echo htmlentities($template_name); ?>"/>
+	<input type="hidden" value="" name="edtemplate_content"/>
+</form>
+
 <p>Template content:</p>
 <p><em>Special strings:</em><br/>
 &#35;&#35;content&#35;&#35; - Content of page -- MUST be included somewhere!!<br/>
@@ -245,7 +303,7 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 &#35;&#35;menu&#35;&#35; - Page menu<br/>
 &#35;&#35;banner&#35;&#35; - Page banner</p>
 <p>Highlighting type:
-<select name="editor_syntax" onchange="switchLanguage()">
+<select id="editor_syntax" onchange="switchLanguage()">
 	<option value="css">CSS</option>
 	<option value="html">HTML</option>
 	<option value="java">Java</option>
@@ -253,16 +311,17 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 	<option value="php">PHP</option>
 	<option value="text">Plain Text</option>
 </select></p>
+<div id="adm_edarea_save"></div>
 <div id="cp_container"></div>
 <br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
 <p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
-<input type="submit" name="submit" value="Change content">
-</form><?php	
+<input type="button" value="Change content" onclick="formSubmit()">
+<?php	
 
 }
 
 // validates and adds data to database
-function edtemplate_add_data($template_id){
+function edtemplate_add_data($template_id,$be_verbose){
 
 	// ensures valid input information
 	global $cfg, $auth;	
@@ -298,7 +357,9 @@ function edtemplate_add_data($template_id){
 			
 		if (!db_is_valid_result($result)){
 			onnac_error("Error adding information to database for $h_template_name!!!");
-			edtemplate_render_editor($template_id,$template_name,$template);
+			
+			if ($be_verbose)
+				edtemplate_render_editor($template_id,$template_name,$template);
 			return 1;
 		}
 	
@@ -308,7 +369,8 @@ function edtemplate_add_data($template_id){
 		
 		if (!db_is_valid_result($result) || db_affected_rows($result) != 1){
 			onnac_error("Update failed!");
-			edtemplate_render_editor($template_id,$template_name,$template);
+			if ($be_verbose)
+				edtemplate_render_editor($template_id,$template_name,$template);
 			return 1;	
 		}
 		
@@ -318,7 +380,10 @@ function edtemplate_add_data($template_id){
 	$result = db_query("UPDATE $cfg[t_content] SET other_update = NOW() WHERE template_id = '$template_id'");
 	db_is_valid_result($result);
 	
-	echo "Database was updated successfully for &quot;$h_template_name&quot;!<p><a href=\"##pageroot##/?mode=edtemplate\">Edit another template</a><br/><a href=\"##pageroot##/?mode=edtemplate&amp;template_name=$h_template_name<a href=\"##pageroot##/\">Return to main administrative menu</a>";
+	if ($be_verbose)
+		echo "Database was updated successfully for &quot;$h_template_name&quot;!<p><a href=\"##pageroot##/?mode=edtemplate\">Edit another template</a><br/><a href=\"##pageroot##/?mode=edtemplate&amp;template_name=$h_template_name<a href=\"##pageroot##/\">Return to main administrative menu</a>";
+	else
+		echo 'Last saved at ' . date("g:i.s a");
 
 	return 0;	// success
 }

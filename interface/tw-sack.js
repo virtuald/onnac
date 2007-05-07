@@ -191,3 +191,48 @@ function sack(file) {
 	this.reset();
 	this.createAJAX();
 }
+
+// taken from http://kratcode.wordpress.com/2006/03/07/javascript-script-execution-in-innerhtml-the-revenge/
+function execJS(node){
+	var bSaf = (navigator.userAgent.indexOf('Safari') != -1);
+	var bOpera = (navigator.userAgent.indexOf('Opera') != -1);
+	var bMoz = (navigator.appName == 'Netscape');
+
+	if (!node) return;
+
+	/* IE wants it uppercase */
+	var st = node.getElementsByTagName('SCRIPT');
+	var strExec;
+
+	for(var i=0;i<st.length; i++)
+	{
+		if (bSaf) {
+			strExec = st[i].innerHTML;
+			st[i].innerHTML = "";
+		} else if (bOpera) {
+			strExec = st[i].text;
+			st[i].text = "";
+		} else if (bMoz) {
+			strExec = st[i].textContent;
+			st[i].textContent = "";
+		} else {
+			strExec = st[i].text;
+			st[i].text = "";
+		}
+
+		try {
+			var x = document.createElement("script");
+			x.type = "text/javascript";
+
+			/* In IE we must use .text! */
+			if ((bSaf) || (bOpera) || (bMoz))
+				x.innerHTML = strExec;
+			else
+				x.text = strExec;
+
+			document.getElementsByTagName("head")[0].appendChild(x);
+		} catch(e) {
+			alert(e);
+		}
+	}
+}

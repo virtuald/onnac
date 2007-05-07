@@ -691,13 +691,19 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 
 	attachOnload(window,ed_load);
 	
-	window.addEventListener('keypress', saveHandler, true);
+	// keystroke stuff
+	if (window.addEventListener)
+		window.addEventListener('keypress', saveHandler, true);
+	else
+		document.attachEvent('onkeydown', saveHandler);
+		
 	function saveHandler(e){
 		
 		if (!e) var e = window.event;
 		
 		// catch CTRL-S
-		if((e.charCode ? e.charCode == 115 : e.keyCode == 115) && e.ctrlKey) {
+		if((e.charCode !== undefined ? e.charCode == 115 : e.keyCode == 83) && e.ctrlKey) {
+			
 			saveBegin();
 			if (e.preventDefault)
 				e.preventDefault();
@@ -742,6 +748,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	
 	function saveComplete(){
 		saving = false;
+		execJS(document.getElementById('adm_edarea_save'));	// execute any script elements
 	}
 	
 	// called when FCKeditor is done starting..
@@ -778,9 +785,8 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	$query = "SELECT banner_id,name FROM $cfg[t_banners] ORDER BY name ASC";
 	generate_select_option('edurl_banner',$bannerID,$query,true);
 
-?>&nbsp;<a href="javascript:previewWindow('banner',document.edurl_editor.edurl_banner.value)">Show</a></td>
-	
-	</tr>
+?>&nbsp;<a href="javascript:previewWindow('banner',document.edurl_editor.edurl_banner.value)">Show</a></td></tr>
+
 	<tr><td>Execute PHP Code</td><td><select name="edurl_execute"><option value="yes" <?php if ($execute) echo "selected";?>>Yes</option><option value="no" <?php if (!$execute) echo "selected";?>>No</option></select></td>
 	
 	<td>Menu ID</td><td><?php
@@ -788,10 +794,10 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	$query = "SELECT menu_id,name FROM $cfg[t_menus] ORDER BY name ASC";
 	generate_select_option('edurl_menu',$menuID,$query,true);
 	
-?><input type="hidden" value="" name="edurl_content"/></p>
-	
-	</tr>
+?>
+	</td></tr>
 </table>
+<input type="hidden" value="" name="edurl_content"/>
 </form>
 
 <h5>Page content:</h5>
@@ -803,12 +809,14 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 &#35;&#35;banner&#35;&#35; - Page banner
 </p>
 <p><strong>Warning</strong>: If you use the HTML editor to modify non-HTML content, then your text may become corrupted!</p>
-<ul id="adm_list">
-	<li><a href="javascript:switchEditor('fck')">HTML View</a></li>
-	<li><a href="javascript:switchEditor('cp')">Code View</a></li>
-</ul>
+<div id="adm_edarea_save"></div>
+<p>
+	<ul id="adm_list">
+		<li><a href="javascript:switchEditor('fck')">HTML View</a></li>
+		<li><a href="javascript:switchEditor('cp')">Code View</a></li>
+	</ul>
+</p>
 <div id="adm_edarea_editor">
-	<div id="adm_edarea_save"></div>
 	<div id="div_codepress" style="display: none">
 		<p>Highlighting type:
 		<select id="editor_syntax" onchange="switchLanguage()">

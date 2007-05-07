@@ -69,10 +69,10 @@ CodePress = {
 		else if(keyCode==86 && evt.ctrlKey)  { // paste
 			// TODO: pasted text should be parsed and highlighted
 		}
-		else if(keyCode==115 && evt.ctrlKey)  {//save
-			if (this.saveHandler != null){
-				this.saveHandler();
-				evt.preventDefault();
+		else if(keyCode==83 && evt.ctrlKey)  {//save
+			if (CodePress.saveHandler != null){
+				CodePress.saveHandler();
+				evt.returnValue = false;
 			}
 		}
 	},

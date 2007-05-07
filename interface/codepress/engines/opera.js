@@ -60,8 +60,8 @@ CodePress = {
 			// TODO: pasted text should be parsed and highlighted
 		}
 		else if(charCode==115 && evt.ctrlKey)  {//save
-			if (this.saveHandler != null){
-				this.saveHandler();
+			if (CodePress.saveHandler != null){
+				CodePress.saveHandler();
 				evt.preventDefault();
 			}
 		}

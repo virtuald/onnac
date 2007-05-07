@@ -58,7 +58,7 @@ $render['template'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
 </body>
 </html>';
 
-$render['menu'] = '<li><a href="##pageroot##">Home</a></li>';
+$render['menu'] = '<li><a href="##rootdir##/">Website</a></li>';
 
 // don't cache admin pages!
 header("Cache-Control: no-cache, private");
@@ -193,7 +193,7 @@ switch ($mode){
 		echo "<p><strong>Warning!</strong> <em>magic_quotes_gpc</em> is enabled! This may significantly degrade performance, and it is <em>highly</em> recommended that you disable them!</p>";
 	}
 	
-?></ul><p><a href="##rootdir##">Root directory</a></p><?php
+?><p>Select an option from the top menu.</p><p><a href="##rootdir##">Root directory</a></p><?php
 
 }
 
