@@ -66,7 +66,7 @@ function viewcount(){
 		$by = "ASC";
 	
 	if (db_has_rows($result)){
-		echo "<table style=\"width:530px;\"><thead><tr><td><strong><a href=\"##pageroot##/?mode=viewcount&amp;sort=url&amp;by=$by\">Page</a></strong></td><td><strong><a href=\"##pageroot##/?mode=viewcount&amp;sort=visited_count&amp;by=$by\">Count</a></strong></td><td><strong><a href=\"##pageroot##/?mode=viewcount&amp;sort=last_visit&amp;by=$by\">Last access</a></strong></td></tr></thead>";
+		echo "<table class=\"highlighted\"><thead><tr><td><strong><a href=\"##pageroot##/?mode=viewcount&amp;sort=url&amp;by=$by\">Page</a></strong></td><td><strong><a href=\"##pageroot##/?mode=viewcount&amp;sort=visited_count&amp;by=$by\">Count</a></strong></td><td><strong><a href=\"##pageroot##/?mode=viewcount&amp;sort=last_visit&amp;by=$by\">Last access</a></strong></td></tr></thead>";
 		
 		while($row = db_fetch_row($result))
 			echo "<tr><td>$row[0]</td><td>$row[1]</td><td>" . date("F j, Y, g:i a",$row[2]) . "</td></tr>";

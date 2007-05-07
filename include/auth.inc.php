@@ -75,7 +75,7 @@ class authentication {
 		$this->login_message = "You must login to access this area."; 
         
 		// only set this to be true if you have a reason
-		$this->auth_debug = false;
+		$this->auth_debug = true;
 		
 		$key = "";
 		
@@ -278,10 +278,12 @@ class authentication {
 		return $ret;
 	}
     
-	// TODO: This is probably buggy, it needs to be fixed. 
+	// TODO: This is probably buggy, it needs to be fixed. don't you love confidence?
     function authenticate(){
         
 		global $cfg;
+		
+		$ajax = get_get_var('ajax') == 'true' ? true : false;
 		
 		// save submitted data
 		$_SESSION['post'] = $_POST;
@@ -290,10 +292,45 @@ class authentication {
 		$key_key = htmlentities('x' . $this->session_id . 'key');
 		$user_key = htmlentities('x' . $this->session_id . 'username');
 		
-		?><script type="text/javascript"><!--
+		if ($ajax)
+			echo '<div id="auth_ajaxframe">';
 		
-function formSubmit(){
+		?><script type="text/javascript"<?php if ($ajax) echo " DEFER "; ?>><!--
+		
+function auth_form_submit(){
 	document.frm_login.<?php echo $key_key; ?>.value = hex_md5('<?php echo htmlentities($this->session_id);?>:' + hex_md5(document.frm_login.<?php echo $user_key; ?>.value + ':' + document.frm_login.<?php echo $key_key; ?>.value));
+	
+	<?php if ($ajax){?>
+		
+	// assume that the ajax library has already been loaded since we're called through ajax.. 
+	auth_ajax.setVar('x' + unescape('<?php echo rawurlencode($this->session_id); ?>') + 'expires','<?php echo (time() + $cfg['login_expires']);?>');
+	auth_ajax.setVar('x' + unescape('<?php echo rawurlencode($this->session_id); ?>'),'tx');
+	
+	auth_ajax.setVar(unescape('<?php echo rawurlencode($this->session_id); ?>') + 'key',document.frm_login.<?php echo $key_key; ?>.value);
+	auth_ajax.setVar(unescape('<?php echo rawurlencode($this->session_id); ?>') + 'user',document.frm_login.<?php echo $user_key; ?>.value);
+	
+	auth_ajax.requestFile = unescape('<?php echo rawurlencode($_SERVER['REQUEST_URI']); ?>');
+	auth_ajax.method = 'POST';
+	auth_ajax.element = 'auth_ajaxframe';
+	auth_ajax.runAJAX();
+	
+	if (evt)
+		evt.preventDefault();
+	else
+		evt.cancelBubble = true;
+	alert('all');
+	return false;
+}
+
+// this will be in a global scope
+var auth_ajax = new sack();
+alert('your mom');
+function does_nothing_at_all(){
+	<?php } ?>
+}
+
+function boo(){
+	alert('BOO');
 }
 
 // ensure the session ID is valid!
@@ -307,15 +344,19 @@ if (sessions > 1){
 	document.write('<p><strong>Warning:</strong> Previous sessions detected. Please reload your browser and/or clear your cookies to continue if login fails.</p>');
 }
 		
-//--></script><form name="frm_login" method="post" action="<?php echo htmlentities($_SERVER['REQUEST_URI']); ?>" onsubmit="formSubmit()"><?php echo $this->login_message; ?> Javascript and cookies must be enabled to continue.
+//--></script><form name="frm_login" method="post" action="<?php echo htmlentities($_SERVER['REQUEST_URI']); ?>" onsubmit="auth_form_submit()"><?php echo $this->login_message; ?> Javascript and cookies must be enabled to continue.
 		<table>
 			<tr><td>Username</td><td><input name="<?php echo $user_key; ?>" size="20" value="<?php echo htmlentities($this->username);?>" /></td></tr>
 			<tr><td>Password</td><td><input name="<?php echo $key_key; ?>" size="20" type="password" /></td></tr>
 		</table>
 		<input type="hidden" name="x<?php echo htmlentities($this->session_id); ?>expires" value="<?php echo (time() + $cfg['login_expires']);?>" />
-		<input type="hidden" name="x<?php echo htmlentities($this->session_id); ?>" value="tx" /><input type="submit" value="Login" /></form><script type="text/javascript"><!--
+		<input type="hidden" name="x<?php echo htmlentities($this->session_id); ?>" value="tx" /><input type="submit" value="Login" /></form><a href="javascript:boo()">BOO</a><script type="text/javascript"<?php if ($ajax) echo " DEFER "; ?>><!--
 <?php require('jsmd5.inc.php'); ?>
 		//--></script><?php
+		
+		if ($ajax)
+			echo '</div>';
+		
     }
 	
 	// logout function borrowed from PHP docs

@@ -48,7 +48,7 @@ function export_data(){
 	if ($action == ""){
 
 ?><h4>Export data (single file, can be imported again)</h4>
-<form action="##pageroot##/?mode=export&amp;action=export" method="post">
+<form action="##pageroot##/?mode=export&amp;action=export&amp;ajax=true" method="post">
 	<table>
 	<tr><td>Export Type:</td><td>
 	<select name="type">
@@ -62,7 +62,7 @@ function export_data(){
 	<input type="submit" value="Export" />
 </form>
 <h4>Export as rendered HTML files (tar.gz file, cannot be imported again)</h4>
-<form action="##pageroot##/?mode=export&amp;action=export" method="post">
+<form action="##pageroot##/?mode=export&amp;action=export&amp;ajax=true" method="post">
 	<table>
 	<tr><td>Directory</td><td><select name="directory"><?php
 	
@@ -381,7 +381,7 @@ function do_export($type,$output){
 	// formalities
 	header("Content-Type: application/octet-stream;");
 	header('Content-Disposition: attachment; filename="' . $fName . '"');
-	$cfg['output_replace'] = false;
+	
 }
 
 ?>

@@ -334,7 +334,7 @@ function import_content($imported,$user_approved,$install_mode){
 		$warning = "";
 		
 		// is it valid?
-		if (!is_array($node) || !keys_exist_in($node,$params,'content array') || $node['url_hash'] != md5($node['url'])){
+		if (!is_array($node) || !keys_exist_in($node,$params,'content array') || $node['url_hash'] != md5(db_escape_string($node['url']))){
 			echo "<tr><td colspan=\"5\">Row $i failed sanity check!</td></tr>";
 		}else{
 		
@@ -593,11 +593,8 @@ class import_module {
 							
 							echo "</td><td>";
 						}
-
 						
 						$ikey = md5($ikey);
-						
-						
 
 						// check to see if the item exists already
 						if (!array_key_exists($ikey,$items)){

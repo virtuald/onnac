@@ -12,6 +12,8 @@
 	- Added ability to specify export filename
 	- Added functionality to export entire rendered website (or just a directory) to a tar.gz file
 	- Updated FCKEditor to 2.4.2
+	- Added CTRL-S functionality to editor
+	- Ajax functionality added using SACK by Gregory Wild-Smith (http://www.twilightuniverse.com/)
 
 0.0.9.1 (4/1/2007)
 ---------------------

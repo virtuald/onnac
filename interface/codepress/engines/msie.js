@@ -17,19 +17,21 @@
 CodePress = {
 	scrolling : false,
 	autocomplete : true,
+	saveHandler : null,
 	
 	// set initial vars and start sh
 	initialize : function() {
-		if(typeof(editor)=='undefined'&&!arguments[0]) return;
+		if(typeof(editor)=='undefined' && !arguments[0]) return;
 		chars = '|32|46|62|'; // charcodes that trigger syntax highlighting
 		cc = '\u2009'; // control char
-		editor = document.getElementById('code');
+		editor = document.getElementsByTagName('pre')[0];
 		editor.contentEditable = 'true';
+		document.getElementsByTagName('body')[0].onfocus = function() {editor.focus();}
 		document.attachEvent('onkeydown', this.metaHandler);
 		document.attachEvent('onkeypress', this.keyHandler);
 		window.attachEvent('onscroll', function() { if(!CodePress.scrolling) setTimeout(function(){CodePress.syntaxHighlight('scroll')},1)});
 		completeChars = this.getCompleteChars();
-		CodePress.syntaxHighlight('init');
+//		CodePress.syntaxHighlight('init');
 		setTimeout(function() { window.scroll(0,0) },50); // scroll IE to top
 	},
 	
@@ -42,29 +44,36 @@ CodePress = {
 	    else if(chars.indexOf('|'+charCode+'|')!=-1||charCode==13) { // syntax highlighting
 		 	CodePress.syntaxHighlight('generic');
 		}
-		else if(charCode==46||charCode==8) { // save to history when delete or backspace pressed
-		 	CodePress.actions.history[CodePress.actions.next()] = editor.innerHTML;
-		}
-		else if((charCode==122||charCode==121||charCode==90) && evt.ctrlKey) { // undo and redo
-			(charCode==121||evt.shiftKey) ? CodePress.actions.redo() :  CodePress.actions.undo(); 
-			evt.returnValue = false;
-		}
-		else if(charCode==86 && evt.ctrlKey)  { // paste
-			// TODO: pasted text should be parsed and highlighted
-		}
 	},
 
 	metaHandler : function(evt) {
-		if(evt.keyCode==9 || evt.tabKey) { 
+		keyCode = evt.keyCode;
+		if(keyCode==9 || evt.tabKey) { 
 			CodePress.snippets();
 		}
-		else if(evt.keyCode==34||evt.keyCode==33) { // handle page up/down for IE
-			self.scrollBy(0, (evt.keyCode==34) ? 200 : -200); 
+		else if((keyCode==122||keyCode==121||keyCode==90) && evt.ctrlKey) { // undo and redo
+			(keyCode==121||evt.shiftKey) ? CodePress.actions.redo() :  CodePress.actions.undo(); 
 			evt.returnValue = false;
 		}
-		else if((evt.ctrlKey || evt.metaKey) && evt.shiftKey && evt.keyCode!=90)  { // shortcuts = ctrl||appleKey+shift+key!=z(undo) 
-			CodePress.shortcuts(evt.keyCode);
+		else if(keyCode==34||keyCode==33) { // handle page up/down for IE
+			self.scrollBy(0, (keyCode==34) ? 200 : -200); 
 			evt.returnValue = false;
+		}
+		else if(keyCode==46||keyCode==8) { // save to history when delete or backspace pressed
+		 	CodePress.actions.history[CodePress.actions.next()] = editor.innerHTML;
+		}
+		else if((evt.ctrlKey || evt.metaKey) && evt.shiftKey && keyCode!=90)  { // shortcuts = ctrl||appleKey+shift+key!=z(undo) 
+			CodePress.shortcuts(keyCode);
+			evt.returnValue = false;
+		}
+		else if(keyCode==86 && evt.ctrlKey)  { // paste
+			// TODO: pasted text should be parsed and highlighted
+		}
+		else if(keyCode==115 && evt.ctrlKey)  {//save
+			if (this.saveHandler != null){
+				this.saveHandler();
+				evt.preventDefault();
+			}
 		}
 	},
 
@@ -136,6 +145,10 @@ CodePress = {
 		}
 	},
 	
+	readOnly : function() {
+		editor.contentEditable = (arguments[0]) ? 'false' : 'true';
+	},
+	
 	complete : function(trigger) {
 		var complete = Language.complete;
 		for (var i=0; i<complete.length; i++) {
@@ -158,7 +171,7 @@ CodePress = {
 		var cCode = arguments[0];
 		if(cCode==13) cCode = '[enter]';
 		else if(cCode==32) cCode = '[space]';
-		else cCode = '['+String.fromCharCode(charCode).toLowerCase()+']';
+		else cCode = '['+String.fromCharCode(keyCode).toLowerCase()+']';
 		for(var i=0;i<Language.shortcuts.length;i++)
 			if(Language.shortcuts[i].input == cCode)
 				this.insertCode(Language.shortcuts[i].output,false);

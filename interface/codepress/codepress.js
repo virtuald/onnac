@@ -18,28 +18,48 @@ CodePress = function(obj) {
 	self.style.width = self.textarea.clientWidth +'px';
 	self.textarea.style.overflow = 'auto';
 	self.style.border = '1px solid gray';
+	self.frameBorder = 0; // remove IE internal iframe border
 	self.style.visibility = 'hidden';
 	self.style.position = 'absolute';
+	self.options = self.textarea.className;
+	self.initialized = false;
 	
 	self.initialize = function() {
 		self.editor = self.contentWindow.CodePress;
+		self.editor.saveHandler = self.saveHandler;
 		self.editor.body = self.contentWindow.document.getElementsByTagName('body')[0];
 		self.editor.setCode(self.textarea.value);
+		self.setOptions();
 		self.editor.syntaxHighlight('init');
 		self.textarea.style.display = 'none';
 		self.style.position = 'static';
 		self.style.visibility = 'visible';
 		self.style.display = 'inline';
+		self.initialized = true;
 	}
 	
 	self.edit = function(id,language) {
 		if(id) self.textarea.value = document.getElementById(id).value;
 		if(!self.textarea.disabled) return;
-		self.language = (language) ? language : self.textarea.className.replace(/ ?codepress ?/,'');
+		self.language = language ? language : self.options.replace(/ ?codepress ?| ?readonly-on ?| ?autocomplete-off ?| ?linenumbers-off ?/g,'');
 		if(!CodePress.languages[self.language]) self.language = 'generic';
-		self.src = CodePress.path+'codepress.html?'+self.language+':'+CodePress.engine+':'+(new Date).getTime();
+		self.src = CodePress.path+'codepress.html?language='+self.language+'&ts='+(new Date).getTime();
 		if(self.attachEvent) self.attachEvent('onload',self.initialize);
 		else self.addEventListener('load',self.initialize,false);
+	}
+
+	self.setOptions = function() {
+		if(self.options.match('autocomplete-off')) self.toggleAutoComplete();
+		if(self.options.match('readonly-on')) self.toggleReadOnly();
+		if(self.options.match('linenumbers-off')) self.toggleLineNumbers();
+	}
+	
+	self.saveHandler = null;
+	self.setSaveHandler = function(func){
+		if (!self.initialized)
+			self.saveHandler = func;
+		else		
+			self.editor.saveHandler = func;
 	}
 	
 	self.getCode = function() {
@@ -49,13 +69,23 @@ CodePress = function(obj) {
 	self.setCode = function(code,lang) {
 		self.textarea.disabled ? self.editor.setCode(code,lang) : self.textarea.value = code;
 	}
+
+	self.toggleAutoComplete = function() {
+		self.editor.autocomplete = (self.editor.autocomplete) ? false : true;
+	}
 	
-	self.toogleLinenumbers = function() {
+	self.toggleReadOnly = function() {
+		self.textarea.readOnly = (self.textarea.readOnly) ? false : true;
+		if(self.style.display != 'none') // prevent exception on FF + iframe with display:none
+			self.editor.readOnly(self.textarea.readOnly ? true : false);
+	}
+	
+	self.toggleLineNumbers = function() {
 		var cn = self.editor.body.className;
 		self.editor.body.className = (cn==''||cn=='show-line-numbers') ? 'hide-line-numbers' : 'show-line-numbers';
 	}
 	
-	self.toogleEditor = function() {
+	self.toggleEditor = function() {
 		if(self.textarea.disabled) {
 			self.textarea.value = self.getCode();
 			self.textarea.disabled = false;
@@ -88,18 +118,8 @@ CodePress.languages = {
 	sql : 'SQL'
 }
 
-CodePress.getEngine = function()	{
-	var engine = 'older';
-	var ua = navigator.userAgent;
-	if(ua.match('MSIE')) engine = 'msie';
-	else if(ua.match('KHTML')) engine = 'khtml'; 
-	else if(ua.match('Opera')) engine = 'opera'; 
-	else if(ua.match('Gecko')) engine = 'gecko';
-	return engine;
-}
 
 CodePress.run = function() {
-	CodePress.engine = CodePress.getEngine();
 	s = document.getElementsByTagName('script');
 	for(var i=0,n=s.length;i<n;i++) {
 		if(s[i].src.match('codepress.js')) {

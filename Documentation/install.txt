@@ -68,9 +68,13 @@ I highly recommend that you do testing first before you upgrade.
 
 The recommended upgrade procedure will probably go something like this. :)
 
-a) Use the 'Import' function to import the install.osf file from 
+a) If you are upgrading from an older Onnac to version 0.0.9.2 or above, you
+will need to use the 'Import' function to import the install.osf file from 
 ./install/default/ directory. Make sure you only overwrite the administrative
-template and interface file, and if you still have the default error pages, those too. 
+template and interface file. and if you still have the default error pages, those too. 
+
+If you are upgrading from Onnac 0.0.9.2 to a newer version, then you will not
+need to import install.osf EXCEPT to update the default error pages.
 
 b) Copy new distribution files over old files
 	-- index.php and /include/*.php first, see if it works
@@ -81,6 +85,7 @@ Next, delete the following directories
 	
 	Then, copy the new files in /include/admin/ and /interface over
 	You should NOT copy the install directory over, it is not needed.
+	In general, the install directory should NOT be kept on the server.
 	
 In general, if it doesn't work then there are a few specific things that could have
 broken:

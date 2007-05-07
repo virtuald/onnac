@@ -34,33 +34,70 @@ tr.highlighted{
 	background: #ddddde;
 }
 
-
 /* special items */
 #adm_header{
-padding: 1em;
-background-color: #3399ff;
-color: white;
-font-size: 1.5em;
+	padding: 1em;
+	background-color: #3399ff;
+	color: white;
+	font-size: 1.5em;
+	border-bottom: 1px solid #6666ff;
 }
 
+
+#adm_header_menu ul{
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	position: relative;
+	float: left;
+	width: 100%;
+	background-color: #3366ff;
+}
+
+
+#adm_header_menu li{
+	float: left;
+}
+
+#adm_header_menu a {
+	width: 5em;
+	display: block;
+	text-decoration: none;
+	color: white;
+	border-left: 0;
+	padding-left: 0.5em;
+	margin-left: 0.5em;
+	background-color: #3399ff;
+}
+
+
+#adm_header_menu a:hover{
+	color: white;
+	background-color: #3366ff;
+}
+
+
 #adm_content{
-padding: 1em;
-border: 1px dotted #000000;
+	clear: both;
+	padding: 1em;
+	border: 1px dotted #000000;
 }
 
 #adm_footer{
-padding: 1em;
-background-color: #3399ff;
-color: white;
-font-size: 0.7em;
-text-align: center;
+	padding: 1em;
+	background-color: #3399ff;
+	color: white;
+	font-size: 0.7em;
+	text-align: center;
 }
 
 /* floating login id on screen */
 #adm_logout{
-text-align: right;
-float:right;
+	text-align: right;
+	float:right;
 }
+
+
 
 /* edurl browsing interface */
 .edurl_tab{
@@ -180,6 +217,14 @@ float:right;
 	width: 96%;
 	height: 550px;
 	border: 1px solid #000000;
+}
+
+#adm_edarea_save{
+	display: none;
+	background: #f9f9f9;
+	border: 1px solid #000000;
+	margin-top: 1em;
+	padding: 0.5em;
 }
 
 .sqlerror{

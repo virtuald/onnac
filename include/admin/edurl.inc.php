@@ -35,16 +35,13 @@ function edurl($error = "no"){
 
 	global $cfg;
 	
-	// make db connection
-	if ($error == "no"){
-		
-		echo "<h4>Content editor</h4>";
-	
-	}
-	
 	// get variables
 	$page_url = get_get_var('page_url');
 	$ed_action = get_get_var('ed_action');
+	$ajax = get_get_var('ajax');
+	
+	if ($error == "no" && $ajax != 'true')
+		echo "<h4>Content editor</h4>";
 	
 	
 	if ($page_url == "" || $error == "shownew"){
@@ -69,14 +66,24 @@ function edurl($error = "no"){
 		}
 	}
 	
-	function switch_dir(current,next){
+	function switch_dir(current,next,val){
 		next_element = document.getElementById(next);
 		if (next_element){
 			document.getElementById(current).style.display = 'none';
 			next_element.style.display = 'block';
+			document.forms['newpage'].newurl.value = val;
 			set_cookie("onnac_edurl_last",next);
+			set_cookie("onnac_edurl_val",val);
 		}
 		return false;
+	}
+	
+	function showExtra(item){
+		// todo
+	}
+	
+	function doEdit(item){
+		// todo
 	}
 	
 	var hiddenShown = false;
@@ -102,9 +109,12 @@ function edurl($error = "no"){
 </script>
 <?php
 	
+		$cookie_val = htmlentities(get_cookie_var('onnac_edurl_val'));
+		if ($cookie_val == "")
+			$cookie_val = '/';
 	
 		// echo form to add a new page.. 
-		echo "<form action=\"##pageroot##/?mode=edurl&amp;ed_action=newpage&amp;page_url=new\" method=\"post\"><input type=text name=newurl value=\"/\"><input type=submit name=submit value=\"Create new page\"> <a id=\"show_hidden_files\" href=\"javascript:show_hidden_files()\">Show Hidden Files</a></form>";
+		echo "<form action=\"##pageroot##/?mode=edurl&amp;ed_action=newpage&amp;page_url=new\" method=\"post\" name=\"newpage\"><input type=\"text\" name=\"newurl\" value=\"$cookie_val\" style=\"width:40%\"><input type=submit name=submit value=\"Create new page\"> <a id=\"show_hidden_files\" href=\"javascript:show_hidden_files()\">Show Hidden Files</a></form>";
 	
 		$result = db_query("SELECT url,page_title," . db_get_timestamp_query("last_update") . ",last_update_by,hidden FROM $cfg[t_content] ORDER BY url ASC");
 		
@@ -119,7 +129,8 @@ function edurl($error = "no"){
 	
 	}else{
 		// do something
-		$page_url = db_escape_string($page_url);
+		$h_page_url = htmlentities($page_url);
+		$s_page_url = db_escape_string($page_url);
 	
 		// TODO: Split this code up, too long.. 
 		
@@ -136,6 +147,8 @@ function edurl($error = "no"){
 				// compensate for the lack of /... easy mistake to make
 				if ($page_url{0} != '/')
 					$page_url = "/$page_url";
+				
+				$h_page_url = htmlentities($page_url);
 					
 				// there is no break here -- intentional
 				
@@ -143,7 +156,7 @@ function edurl($error = "no"){
 				
 				// verify page exists
 				
-				$result = db_query("SELECT page_title,page_execute,banner_id,template_id,menu_id,page_content," . db_get_timestamp_query("last_update") . " FROM $cfg[t_content] WHERE url_hash = '" . md5($page_url) . "'");
+				$result = db_query("SELECT page_title,page_execute,banner_id,template_id,menu_id,page_content," . db_get_timestamp_query("last_update") . " FROM $cfg[t_content] WHERE url_hash = '" . md5($s_page_url) . "'");
 				
 				if (!db_is_valid_result($result))
 					return onnac_error("Cannot verify page existance!");
@@ -152,7 +165,7 @@ function edurl($error = "no"){
 				
 				if ($rows == 0){
 
-					echo "Creating new page: $page_url<p>";
+					echo "<p>Creating new page: $h_page_url</p>";
 					edurl_render_editor($page_url,"",0,-1,-1,-1,"");
 				
 				}else{
@@ -161,7 +174,7 @@ function edurl($error = "no"){
 			
 						$row = db_fetch_row($result);
 						
-						echo "Existing page: $page_url<p>Absolute URL: ##rootdir##$page_url<br/>Last updated: " . date("F j, Y, g:i a",$row[6]) . "<p>";
+						echo "Existing page: $h_page_url<p>Absolute URL: ##rootdir##$h_page_url<br/>Last updated: " . date("F j, Y, g:i a",$row[6]) . "<p>";
 						edurl_render_editor($page_url,$row[0],$row[1],$row[2],$row[3],$row[4],$row[5]);
 						
 					}else{
@@ -172,16 +185,16 @@ function edurl($error = "no"){
 				break;
 				
 			case "delete":
-				echo "<p>Do you really want to delete the page &quot;$page_url&quot;?</p><p><a href=\"##pageroot##/?mode=edurl&amp;page_url=$page_url&amp;ed_action=reallydelete\">Yes</a><br/><a href=\"##pageroot##/?mode=edurl\">No</a></p>";
+				echo "<p>Do you really want to delete the page &quot;$h_page_url&quot;?</p><p><a href=\"##pageroot##/?mode=edurl&amp;page_url=$h_page_url&amp;ed_action=reallydelete\">Yes</a><br/><a href=\"##pageroot##/?mode=edurl\">No</a></p>";
 				break;
 				
 			case "reallydelete":
 				
-				echo "Deleting page $page_url from database...<p>";
+				echo "Deleting page $h_page_url from database...<p>";
 				$result = db_query("DELETE FROM $cfg[t_content] WHERE url_hash = '" . md5($page_url) . "'");
 				
 				if (db_is_valid_result($result) && db_affected_rows($result) != 0)
-					echo "Done.<p>$page_url has been deleted.";
+					echo "Done.<p>$h_page_url has been deleted.";
 				else
 					onnac_error("Error deleting page!");
 			
@@ -191,24 +204,22 @@ function edurl($error = "no"){
 				
 			case "change":
 				// TODO: create a backup of the page...  Probably a good idea.
-				if ($page_url{0} != '/'){
-					echo "Error in submitted URL ($page_url)!!! <a href=\"##pageroot##/?mode=edurl\">Back</a>";
-					return;
-				}
+				if ($page_url{0} != '/')
+					return onnac_error("Error in submitted URL ($h_page_url)!!!");
 				
 				// create the new page
-				edurl_add_data($page_url);
+				edurl_add_data($page_url,$ajax == 'true' ? false : true);
+	
 				break;
 				
 			case "hide":
 				// toggle the hidden state of the url			
-				$result = db_query("UPDATE $cfg[t_content] SET hidden = CASE WHEN hidden = 1 THEN 0 ELSE 1 END WHERE url = '$page_url'");
+				$result = db_query("UPDATE $cfg[t_content] SET hidden = CASE WHEN hidden = 1 THEN 0 ELSE 1 END WHERE url_hash = '" . md5($s_page_url) . "'");
 				
 				// refresh page and exit
-				if (db_is_valid_result($result)){
+				if (db_is_valid_result($result))
 					header( "Location:$cfg[page_root]/?mode=edurl");
-					db_close();
-				}else
+				else
 					onnac_error("Error setting 'hidden' flag!");
 				
 				break;
@@ -252,7 +263,6 @@ function edurl($error = "no"){
 					echo "Error: Invalid input to addtodir!";
 					edmenu("shownew");
 				}
-				
 				break;
 				
 			default:
@@ -275,6 +285,9 @@ function edurl($error = "no"){
 		-- display a header and identifiers for each directory and output the associated file list from 
 		   the array mentioned above
 
+	TODO: Make all this just grab the page directory stuff individually, instead
+	of as a whole. Put in a seperate file or something
+		   
 */
 function edurl_show_list($result,$id){
 
@@ -324,7 +337,7 @@ function edurl_show_list($result,$id){
 		$shown_div_hash = get_cookie_var('onnac_edurl_last');
 		$shown_div_found = false;
 		
-		// contains 3 columns:
+		// contains 5 columns:
 		// 	[0] Directory file entries (table row)
 		//	[1] Directory name, split by '/'
 		//	[2] Directory name (full)
@@ -396,7 +409,7 @@ function edurl_show_list($result,$id){
 			
 			// construct the information about the thing
 			// TODO: Allow changes of simple parameters here, like menu/banner/etc
-			$cur_directory_info .= "\n\t\t<tr$f_hide>" . '<td class="edurl_icon"><img src="' . $img_src . '" alt="' . htmlentities($url) . '" /></td><td class="admu_url"><a href="##rootdir##' . $url . '">' . htmlentities($fname) . '</td><td class="admu_title">' . htmlentities($row[1]) . '&nbsp;</td><td class="admu_mod_by">' . htmlentities($row[3]) . '</td><td class="admu_mod">' . date('m/d/Y g:ia',$row[2]) . '</td><td class="admu_end"><a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=hide">[' . $hide_txt . ']</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=edit">[Edit]</a> <a href="##rootdir##' . $url . '?elink_mode=on">[ELink]</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=delete">[Delete]</a></td></tr>';
+			$cur_directory_info .= "\n\t\t<tr onclick=\"showExtra();\" $f_hide>" . '<td class="edurl_icon"><img src="' . $img_src . '" alt="' . htmlentities($url) . '" /></td><td class="admu_url"><a href="##rootdir##' . $url . '">' . htmlentities($fname) . '</td><td class="admu_title">' . htmlentities($row[1]) . '&nbsp;</td><td class="admu_mod_by">' . htmlentities($row[3]) . '</td><td class="admu_mod">' . date('m/d/Y g:ia',$row[2]) . '</td><td class="admu_end"><a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=hide">[' . $hide_txt . ']</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=edit">[Edit]</a> <a href="##rootdir##' . $url . '?elink_mode=on">[ELink]</a> <a href="##pageroot##/?mode=edurl&amp;page_url=' . $url . '&amp;ed_action=delete">[Delete]</a></td></tr>';
 		}
 		
 		// copy/pasted code from above.. 
@@ -446,14 +459,17 @@ function edurl_show_list($result,$id){
 			if ($dir[2] == "")
 				$dir[2] = '/';
 		
-			echo '<div id="' . $dir[3] . '" style="display:' . $display . '" ><span class="edurl_tab">' . htmlentities($dir[2]) . "</span>\n<div class=\"edurl_browser\"><table class=\"highlighted\">";
+			echo "\n<div id=\"" . $dir[3] . '" style="display:' . $display . '" ><span class="edurl_tab">' . htmlentities($dir[2]) . "</span>\n\t<div class=\"edurl_browser\">\n\t<table class=\"highlighted\">";
 		
 			// do this before we modify the array
 			$dir_level = count($dir[1]);
 		
-			// output a pointer to the parent directory -- crazy one-liner :)
-			if ($i != 0)
-				echo "\n\t\t" . '<tr onDblClick="switch_dir(\''. $dir[3] . "','" . $directories[$dir_map[implode(array_slice($dir[1],0,$dir_level-1),'/')]][3] . '\')"><td class="edurl_icon"><img src="##pageroot##/icons/folder.gif" alt="Parent Directory" /></td><td colspan="5">..</td></tr>';
+			// output a pointer to the parent directory -- crazy :)
+			if ($i != 0){
+				$parent = $directories[$dir_map[implode(array_slice($dir[1],0,$dir_level-1),'/')]];
+				echo "\n\t\t" . '<tr onDblClick="switch_dir(\''. $dir[3] . "','" . $parent[3] . '\',\'' . htmlentities($parent[2]) . '\')"><td class="edurl_icon"><img src="##pageroot##/icons/folder.gif" alt="Parent Directory" /></td><td colspan="5">..</td></tr>';
+				
+			}
 			
 			$last_dir = '';
 			
@@ -467,8 +483,10 @@ function edurl_show_list($result,$id){
 				if ($pos !== 0)
 					break;
 				
-				if ($last_dir != $directories[$j][1][$dir_level])
-					echo "\n\t\t" . '<tr onDblClick="switch_dir(\''. $dir[3] . "','" . $directories[$j][3] . '\')"><td class="edurl_icon"><img src="##pageroot##/icons/folder.gif" alt="' . htmlentities($directories[$j][1][$dir_level]) . '" /></td><td colspan="5">' . htmlentities($directories[$j][1][$dir_level]) . '</td></tr>';
+				if ($last_dir != $directories[$j][1][$dir_level]){
+					$_dir = htmlentities($directories[$j][1][$dir_level]);
+					echo "\n\t\t" . '<tr onDblClick="switch_dir(\''. $dir[3] . "','" . $directories[$j][3] . '\',\'' . htmlentities($directories[$j][2]) . '\')"><td class="edurl_icon"><img src="##pageroot##/icons/folder.gif" alt="' . $_dir . '" /></td><td colspan="5">' . $_dir . '</td></tr>';
+				}
 			
 				$last_dir = $directories[$j][1][$dir_level];
 			
@@ -546,11 +564,13 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 ?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
 <script type="text/javascript" src="##pageroot##/FCKeditor/fckeditor.js"></script>
 <script type="text/javascript" src="##pageroot##/codepress/codepress.js"></script>
+<script type="text/javascript" src="##pageroot##/tw-sack.js"></script>
 <script type="text/javascript"><!--
 
 	var curEditor = '';
 	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
 	var cpLoaded = false;
+	var ajax = new sack();
 
 	function getCode() {
 		switch (curEditor){
@@ -564,13 +584,11 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 			default:
 				return initialCode;
 		}
-		
-		return "";
 	}
 	
 	function setCode(text) {
 		
-		var oElement = document.forms['edurl_editor'].editor_syntax;
+		var oElement = document.getElementById('editor_syntax');
 		
 		switch (curEditor){
 			case "fck":
@@ -595,7 +613,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		
 		var cpe = document.getElementById("div_codepress");
 		var fck = document.getElementById("div_fckedit");
-		var oElement = document.forms['edurl_editor'].editor_syntax;
+		var oElement = document.getElementById('editor_syntax');
 		
 		switch (newEditor){
 			case "cp":
@@ -603,9 +621,10 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				fck.style.display = 'none';
 				if (!cpLoaded){
 					var cpi = document.getElementById('cp_container');
-					cpi.innerHTML = '<text' + 'area id="cp" class="codepress ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</textarea>';
+					cpi.innerHTML = '<text' + 'area id="cp" class="codepress ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</text' + 'area>';
 					CodePress.run();
 					cpLoaded = true;
+					cp.setSaveHandler(saveBegin);
 					curEditor = 'cp';
 					return;
 				}
@@ -666,47 +685,115 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		$ix = 4;
 	}
 	
-	echo "document.forms['edurl_editor'].editor_syntax.options[$ix].selected = true;\n";	
+	echo "\t\tdocument.getElementById('editor_syntax').options[$ix].selected = true;\n";	
 ?>
 	}
 
 	attachOnload(window,ed_load);
 	
-	// TODO: Make this work
-	function saveHandler(code){
-		alert(code);
+	window.addEventListener('keypress', saveHandler, true);
+	function saveHandler(e){
+		
+		if (!e) var e = window.event;
+		
+		// catch CTRL-S
+		if((e.charCode ? e.charCode == 115 : e.keyCode == 115) && e.ctrlKey) {
+			saveBegin();
+			if (e.preventDefault)
+				e.preventDefault();
+			else
+				e.returnValue = false;
+		}
+		
+	}
+	
+	var saving = false;
+	
+	// called on save
+	function saveBegin(){
+		if (saving)
+			return false;
+	
+		saving = true;
+	
+		var edArea = document.getElementById('adm_edarea_save');
+		edArea.innerHTML = 'Saving...';
+		edArea.style.display = 'block';
+		
+		var oElement = document.forms['edurl_editor'];
+		
+		// set all the appropriate variables
+		ajax.setVar('edurl_content',getCode());
+		ajax.setVar('edurl_template',oElement.edurl_template[oElement.edurl_template.selectedIndex].value);
+		ajax.setVar('edurl_banner',oElement.edurl_banner[oElement.edurl_banner.selectedIndex].value);
+		ajax.setVar('edurl_menu',oElement.edurl_menu[oElement.edurl_menu.selectedIndex].value);
+		ajax.setVar('edurl_title',oElement.edurl_title.value);
+		ajax.setVar('edurl_execute',oElement.edurl_execute[oElement.edurl_execute.selectedIndex].value);
+		ajax.setVar('edurl_url','<?php echo htmlentities($url);?>');
+		
+		ajax.requestFile = "##pageroot##/?mode=edurl&page_url=<?php echo htmlentities($url);?>&ed_action=change&ajax=true";
+		ajax.method = 'POST';
+		ajax.element = 'adm_edarea_save';
+		ajax.onCompletion = saveComplete;
+		ajax.runAJAX();
+		
+		return false;
+	}
+	
+	function saveComplete(){
+		saving = false;
+	}
+	
+	// called when FCKeditor is done starting..
+	function FCKeditor_OnComplete( editorInstance ){
+		editorInstance.LinkedField.form.onsubmit = saveBegin;
 	}
 
 	function formSubmit(){
 		document.edurl_editor.edurl_content.value = getCode();
+		document.edurl_editor.submit();
 	}
 
+	// TODO: Get rid of this or fix it, its pretty useless as is.. 
 	function previewWindow(type,groupid){
 		window.open("##pageroot##/?mode=preview&amp;type=" + type + "&amp;group=" + groupid ,"AdminPreview","");
 	}
 	
 //--></script>
-<form name="edurl_editor" action="##pageroot##/?mode=edurl&amp;page_url=<?php echo htmlentities($url);?>&amp;ed_action=change" method="post" onsubmit="formSubmit()">
-<p>URL <input type="text" name="edurl_url" size="50" value="<?php echo htmlentities($url); ?>"/><br/>
-Page Title <input type="text" name="edurl_title" size="50" value="<?php echo htmlentities($title,ENT_NOQUOTES);?>"/></p>
-<p>Execute PHP Code <select name="edurl_execute"><option value="yes" <?php if ($execute) echo "selected";?>>Yes</option><option value="no" <?php if (!$execute) echo "selected";?>>No</option></select></p>
-<p>Template <?php 
+<form name="edurl_editor" action="##pageroot##/?mode=edurl&amp;page_url=<?php echo htmlentities($url);?>&amp;ed_action=change" method="post">
+
+<table>
+	<tr><td>URL</td><td><input type="text" name="edurl_url" size="40" value="<?php echo htmlentities($url); ?>"/></td>
+	
+	<td>Template</td><td><?php 
 
 	$query = "SELECT template_id,template_name FROM $cfg[t_templates] ORDER BY template_name ASC";
 	generate_select_option('edurl_template',$templateID,$query,true); 
 
-	echo "</p><p>Banner Group ";
+	?></td></tr>
+	<tr><td>Page Title</td><td><input type="text" name="edurl_title" size="40" value="<?php echo htmlentities($title,ENT_NOQUOTES);?>"/></td>
+	
+	<td>Banner Group</td><td><?php
 
 	$query = "SELECT banner_id,name FROM $cfg[t_banners] ORDER BY name ASC";
 	generate_select_option('edurl_banner',$bannerID,$query,true);
 
-?>&nbsp;<a href="javascript:previewWindow('banner',document.edurl_editor.edurl_banner.value)">Show banner group</a></p><p>
-Menu ID <?php
+?>&nbsp;<a href="javascript:previewWindow('banner',document.edurl_editor.edurl_banner.value)">Show</a></td>
+	
+	</tr>
+	<tr><td>Execute PHP Code</td><td><select name="edurl_execute"><option value="yes" <?php if ($execute) echo "selected";?>>Yes</option><option value="no" <?php if (!$execute) echo "selected";?>>No</option></select></td>
+	
+	<td>Menu ID</td><td><?php
 
 	$query = "SELECT menu_id,name FROM $cfg[t_menus] ORDER BY name ASC";
 	generate_select_option('edurl_menu',$menuID,$query,true);
 	
 ?><input type="hidden" value="" name="edurl_content"/></p>
+	
+	</tr>
+</table>
+</form>
+
 <h5>Page content:</h5>
 <p><em>Special strings:</em><br/>
 &#35;&#35;pageroot&#35;&#35; - Root directory of current page (No trailing /)<br/>
@@ -721,10 +808,10 @@ Menu ID <?php
 	<li><a href="javascript:switchEditor('cp')">Code View</a></li>
 </ul>
 <div id="adm_edarea_editor">
-
+	<div id="adm_edarea_save"></div>
 	<div id="div_codepress" style="display: none">
 		<p>Highlighting type:
-		<select name="editor_syntax" onchange="switchLanguage()">
+		<select id="editor_syntax" onchange="switchLanguage()">
 			<option value="css">CSS</option>
 			<option value="html">HTML</option>
 			<option value="java">Java</option>
@@ -737,24 +824,27 @@ Menu ID <?php
 	</div>
 
 	<div id="div_fckedit" style="display: none">
+		<form>
 		<script type="text/javascript">
 			var oFCKeditor = new FCKeditor('FCKeditor');
 			oFCKeditor.BasePath = "##pageroot##/FCKeditor/";
 			oFCKeditor.Height = "450";
 			oFCKeditor.Create();
 		</script>
+		</form>
 		<br/><a href="javascript:revert_text();">Revert Current Changes</a>
 	</div>
 </div>
 <p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
 
-<input type="submit" name="submit" value="Change content">
-</form><?php	
+<input type="button" value="Change content" onclick="formSubmit()">
+<?php	
 
 }
 
 // validates and adds data to database
-function edurl_add_data($url){
+// 		if be_verbose is true, then its an AJAX call!
+function edurl_add_data($url,$be_verbose){
 
 	// ensures valid input information
 	global $cfg,$auth;	
@@ -808,7 +898,7 @@ function edurl_add_data($url){
 	}
 	
 	if (!isset($_POST['edurl_execute'])){
-		onnac_error("Error in execute!");
+		onnac_error("Error in parameter 'execute'!");
 		return 1;
 	}else{
 		$execute = db_escape_string($_POST['edurl_execute']);
@@ -819,31 +909,31 @@ function edurl_add_data($url){
 	}else if ($execute == "no"){
 		$execute = 0;
 	}else{
-		onnac_error("Invalid input to execute");
+		onnac_error("Invalid value for parameter 'execute'!");
 		return 1;
 	}
 		
 	if (!isset($_POST['edurl_template'])){
-		onnac_error("Error in param template!");
+		onnac_error("Error in parameter 'template!'");
 		return 1;
 	}else{
 		$templateID = db_escape_string($_POST['edurl_template']);
 	}
 	
 	if (!is_numeric($templateID)){
-		onnac_error("Invalid input to template");
+		onnac_error("Invalid value for parameter 'template'");
 		return 1;
 	}
 		
 	if (!isset($_POST['edurl_banner'])){
-		onnac_error("Error in banner!");
+		onnac_error("Error in parameter 'banner'!");
 		return 1;
 	}else{
 		$bannerID = db_escape_string($_POST['edurl_banner']);
 	}
 	
 	if (!is_numeric($bannerID)){
-		onna_error("Invalid input to bannerID: $bannerID");
+		onnac_error("Invalid value for parameter 'bannerID': $bannerID");
 		return 1;
 	}	
 		
@@ -855,7 +945,7 @@ function edurl_add_data($url){
 	}
 	
 	if (!is_numeric($menuID)){
-		onnac_error("Invalid input to menuID: $menuID");
+		onnac_error("Invalid value for parameter 'menuID': $menuID");
 		return 1;
 	}
 	
@@ -871,17 +961,25 @@ function edurl_add_data($url){
 			
 			if (!db_is_valid_result($result)){
 				onnac_error("Error adding information to database for $h_url!!!");
-				edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
+				if ($be_verbose)
+					edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
 				return 1;
 			}
+			
+			if (!$be_verbose)
+				echo "New page created: ";
 		}
 		
-		echo '<p>Database was updated successfully for <a href="##rootdir##' . $h_new_url . '" target="_blank">##rootdir##' . $h_new_url . '</a><p><a href="##pageroot##/?mode=edurl">Edit another page</a><br/><a href="##pageroot##/?mode=edurl&amp;ed_action=edit&amp;page_url=' . $h_new_url . '">Edit same page</a><br/><a href="##rootdir##' . $h_new_url . '?elink_mode=on">View in ELink mode</a><br/><a href="##pageroot##/">Return to main administrative menu</a></p>';
+		if ($be_verbose)
+			echo '<p>Database was updated successfully for <a href="##rootdir##' . $h_new_url . '" target="_blank">##rootdir##' . $h_new_url . '</a><p><a href="##pageroot##/?mode=edurl">Edit another page</a><br/><a href="##pageroot##/?mode=edurl&amp;ed_action=edit&amp;page_url=' . $h_new_url . '">Edit same page</a><br/><a href="##rootdir##' . $h_new_url . '?elink_mode=on">View in ELink mode</a><br/><a href="##pageroot##/">Return to main administrative menu</a></p>';
+		else
+			echo 'Last saved at ' . date("g:i.s a");
 		return 0;	// success
 	}
 	
 	// invalid result
-	edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
+	if ($be_verbose)
+		edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
 	return 1;
 }
 
