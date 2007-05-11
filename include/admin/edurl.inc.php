@@ -174,7 +174,7 @@ function edurl($error = "no"){
 			
 						$row = db_fetch_row($result);
 						
-						echo "Existing page: $h_page_url<p>Absolute URL: ##rootdir##$h_page_url<br/>Last updated: " . date("F j, Y, g:i a",$row[6]) . "<p>";
+						echo "Existing page: $h_page_url<p>Absolute URL: <a href=\"##rootdir##$h_page_url\">##rootdir##$h_page_url</a><br/>Last updated: " . date("F j, Y, g:i a",$row[6]) . "<p>";
 						edurl_render_editor($page_url,$row[0],$row[1],$row[2],$row[3],$row[4],$row[5]);
 						
 					}else{
