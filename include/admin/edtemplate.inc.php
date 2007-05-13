@@ -194,7 +194,7 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 		Codepress functions
 	*/
 	var curEditor = '';
-	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
+	var initialCode = unescape("<?php echo rawurlencode(htmlentities($content)); ?>");
 	var ajax = new sack();
 	
 	function getCode() {

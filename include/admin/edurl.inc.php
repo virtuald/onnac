@@ -568,7 +568,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 <script type="text/javascript"><!--
 
 	var curEditor = '';
-	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
+	var initialCode = unescape("<?php echo rawurlencode(htmlentities($content)); ?>");
 	var cpLoaded = false;
 	var ajax = new sack();
 
