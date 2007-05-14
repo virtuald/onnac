@@ -2,6 +2,7 @@
 ----------------------
 	- Fixed: Page/Template corruption related to html entities
 	- Added: Export directory only, export directory as root directory
+	- Added: Mount points for importing data
 	- Changed valid export types to 'all', 'content', 'template'
 		- Note: Content-only exports will NOT work with previous versions of Onnac
 	- Usability improvements

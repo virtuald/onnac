@@ -43,23 +43,52 @@ function import_data(){
 	$action = get_get_var('action');
 	echo '<h4>Import Data</h4>';
 
-	// TODO: Mount points
-/*	$mount_point = get_post_var('mount_point');
+	$mount_point = get_post_var('mount_point');
 	// validate this
 	if ($mount_point != "" && $mount_point{0} != '/'){
 		$action = "";
 		onnac_error("Invalid mount point specified! Must start with a '/'");
-	}*/
+	}
 	
 	if ($action == ""){
 	
-		// collection of links showing stuff that you can do
+		$option = "";
+		$result = db_query("SELECT url from $cfg[t_content] ORDER BY url");
+		
+		// first, assemble three arrays of file information
+		if (db_has_rows($result)){
+		
+			$last_dir = '/';
+		
+			while ($row = db_fetch_row($result)){
+			
+				// directory names, without trailing /
+				$dirname = dirname($row[0] . 'x');
+				if ($dirname == '\\' || $dirname == '/')
+					$dirname = '';
+				
+				if ($last_dir != $dirname){
+					if ($last_dir != '')
+						$option .= "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";
+				
+					$last_dir = $dirname;
+				}
+			}
+			
+			if ($last_dir != '')
+				$option .= "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";		
+		}
+	
 		?>
-<form action="##pageroot##/?mode=import&action=import" enctype="multipart/form-data" method="post">
-	File to import: <input name="data" type="file" size="30"/><br/>
-	<!--Mount point: <input name="mount_point" type="text" size="30" value="" /><br/>-->
+		
+<form name="import" action="##pageroot##/?mode=import&action=import" enctype="multipart/form-data" method="post">
+	<table>
+		<tr><td>File to import:</td><td><input name="data" type="file" size="40"/></td></tr>
+		<tr><td>*Mount point:</td><td><input name="mount_point" type="text" size="40" value="/" /></td></tr>
+		<tr><td><em>==&gt;&gt; Choose a directory</em></td><td><select onchange="document.import.mount_point.value = document.import.directory.options[document.import.directory.selectedIndex].value;" name="directory"><?php echo $option; ?></select></td></tr>
+	</table>
 	<input type="submit" value="Import" /><br/>
-	<!--<em>* Mount point is a value that is appended to all file names, including content and menu data</em>-->
+	<em>* Mount point is a value that is prefixed to all file names, including content, banner, and menu data. It is the root directory in which the data is based.</em>
 </form>
 <?php
 	
@@ -291,6 +320,8 @@ function import_content($imported,$user_approved,$install_mode){
 	global $auth,$cfg;
 	
 	$mount_point = get_post_var('mount_point');
+	if ($mount_point == "" || $mount_point[0] != '/' || (strlen($mount_point) != 1 && $mount_point[strlen($mount_point)-1] == '/'))
+		return onnac_error("Invalid mount point specified!");
 	
 	if (!$install_mode)
 		$username = $auth->username;
@@ -303,16 +334,19 @@ function import_content($imported,$user_approved,$install_mode){
 
 	// this must be first, so things work out nicely
 	if (!$user_approved)
-		echo '<p><form method="post" action="##pageroot##/?mode=import&amp;action=import">';
+		echo '<p><form method="post" action="##pageroot##/?mode=import&amp;action=import"><input type="hidden" name="mount_point" value="' . htmlentities($mount_point) . '" />';
+		
+	if ($mount_point == '/')		// special case goes after we echo it
+		$mount_point = '';
 	
 	// import other items first, so things match after import
 	$templates = import_templates($imported,$user_approved,$install_mode,true);
 	if ($templates === false) return false;
 	
-	$menus = import_menus($imported,$user_approved,$install_mode);
+	$menus = import_menus($imported,$user_approved,$install_mode,$mount_point);
 	if ($menus === false) return false;
 	
-	$banners = import_banners($imported,$user_approved,$install_mode);
+	$banners = import_banners($imported,$user_approved,$install_mode,$mount_point);
 	if ($banners === false) return false;
 	
 	// get all needed items into an array
@@ -346,6 +380,10 @@ function import_content($imported,$user_approved,$install_mode){
 		if (!is_array($node) || !keys_exist_in($node,$params,'content array') || $node['url_hash'] != md5(db_escape_string($node['url']))){
 			echo "<tr><td colspan=\"5\">Row $i failed sanity check!</td></tr>";
 		}else{
+		
+			// now, screw with the data :)
+			$node['url'] = $mount_point . $node['url'];
+			$node['url_hash'] = md5(db_escape_string($node['url']));
 		
 			// match the menu group id
 			if ($node['menu_name'] != null)
@@ -444,11 +482,11 @@ VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute
 
 
 // import menus
-function import_menus($imported,$user_approved,$install_mode){
+function import_menus($imported,$user_approved,$install_mode,$mount_point){
 
 	global $cfg;
 
-	$menus = new import_module('menus','menu',$imported,$install_mode);
+	$menus = new import_module('menus','menu',$imported,$install_mode,$mount_point);
 	
 	// setup parameters
 	$menus->sql_item_table		= $cfg['t_menu_items'];
@@ -462,12 +500,15 @@ function import_menus($imported,$user_approved,$install_mode){
 	$menus->sql_group_id		= 'menu_id';
 	$menus->sql_group_name		= 'name';
 	
+	$menus->mount_point			= $mount_point;
+	$menus->mount_item			= 1;
+	
 	// execute it
 	return $menus->Execute($user_approved);
 }
 
 // import banners
-function import_banners($imported,$user_approved,$install_mode){
+function import_banners($imported,$user_approved,$install_mode,$mount_point){
 
 	global $cfg;
 	
@@ -491,6 +532,9 @@ function import_banners($imported,$user_approved,$install_mode){
 	$banners->sql_group_id			= 'banner_id';
 	$banners->sql_group_name		= 'name';
 	
+	$banners->mount_point			= $mount_point;
+	$banners->mount_item			= 0;
+	
 	// execute it
 	return $banners->Execute($user_approved);
 }
@@ -510,6 +554,9 @@ class import_module {
 	var $imported;			// imported
 	var $install_mode;		// install mode set? 
 	var $import_key;
+	
+	var $mount_point;		// mount point, must be "" or start with /
+	var $mount_item;		// which item might have a mount point on it?
 
 	
 // 	[SQL settings]
@@ -537,6 +584,8 @@ class import_module {
 		$this->type = $type;
 		$this->imported = $imported;
 		$this->install_mode = $install_mode;
+		$this->mount_point = "";
+		$this->mount_item = 0;
 	}
 
 	// switches depending on user approval or not
@@ -601,7 +650,11 @@ class import_module {
 						echo "<tr><td>";
 						
 						for($x = 0;$x < $c; $x++){
-						
+							
+							// modify the data now
+							if ($x == $this->mount_item)
+								$n_item[$this->sql_item_data[$x]] = $this->append_mount_point($n_item[$this->sql_item_data[$x]]);
+							
 							$t_item = $n_item[$this->sql_item_data[$x]];
 							
 							echo htmlentities($t_item);
@@ -702,6 +755,11 @@ class import_module {
 						$ikey = '';
 						
 						for($x = 0;$x < $c; $x++){
+						
+							// modify the data now
+							if ($x == $this->mount_item)
+								$n_item[$this->sql_item_data[$x]] = $this->append_mount_point($n_item[$this->sql_item_data[$x]]);
+						
 							$ikey .= trim($n_item[$this->sql_item_data[$x]]);
 							if ($x + 1 < $c)
 								$ikey .= ':';
@@ -824,6 +882,18 @@ class import_module {
 				$output[ md5(implode(':',$row)) ] = $id;
 			}	
 		return $output;
+	}
+	
+	function append_mount_point($item){
+		if ($this->mount_point == "")
+			return $item;
+		
+		if (substr($item,0,11) == "##rootdir##")
+			return '##rootdir##' . $this->mount_point . substr($item,11);
+		if (substr($item,0,12) == "##pageroot##")
+			return '##pageroot##' . $this->mount_point . substr($item,12);
+		
+		return $this->mount_point . $item;
 	}
 }
 
