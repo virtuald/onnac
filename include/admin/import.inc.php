@@ -28,7 +28,8 @@
 	Administration tool -- Import content/menus/etc 
 	
 	Since this is an integral part of the installer, bugfixes will
-	be forthcoming very quickly. 
+	be forthcoming very quickly. Apparently, there are few bugs to fix, which
+	is a very positve thing. :)
 	
 	Full imports seem to work now! :)
 	
@@ -174,8 +175,10 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 
 	global $cfg,$auth;
 
-	if (!keys_exist_in($imported,array('templates'),'template import',false))
-		return onnac_error("'templates' key not found in import file!");
+	$templates_key_exists = array_key_exists('templates',$imported);
+	
+	if (!$inside_form && !$templates_key_exists)
+		return onnac_error("Key 'templates' does not exist!");
 	
 	// check for install mode
 	if (!$install_mode)
@@ -183,11 +186,15 @@ function import_templates($imported,$user_approved,$install_mode,$inside_form = 
 	else
 		$username = "installer";
 
-	// get needed items, differnt stuff for different times
+	// get needed items, different stuff for different times
 	if (!$user_approved && !$install_mode)
 		$templates = get_import_items('template_name',db_get_timestamp_query('last_update'),$cfg['t_templates']);
 	else
 		$templates = get_import_items('template_name','template_id',$cfg['t_templates']);
+	
+	// are we done yet?
+	if (!$templates_key_exists)
+		return $templates;
 	
 	// setup a table here
 	if (!$user_approved){
@@ -290,9 +297,9 @@ function import_content($imported,$user_approved,$install_mode){
 	else
 		$username = "installer";
 	
-	// sanity check for arrays
-	if (!keys_exist_in($imported,array('content','templates','menus','banners'),'import',false))
-		return onnac_error("All content keys not found in import file!");
+	// sanity check for array
+	if (!array_key_exists('content',$imported))
+		return onnac_error("Key 'content' does not exist!");
 
 	// this must be first, so things work out nicely
 	if (!$user_approved)
@@ -535,21 +542,23 @@ class import_module {
 	// switches depending on user approval or not
 	function Execute($user_approved){
 				
-		if (!keys_exist_in($this->imported,array($this->import_key),"$this->type import",false))
-			return false;
+		$exists = array_key_exists($this->import_key,$this->imported);
 				
 		if ($user_approved)
-			return $this->HaveApproval();
+			return $this->HaveApproval($exists);
 			
-		return $this->GetApproval();
+		return $this->GetApproval($exists);
 		
 	}
 	
 	// get approval from the user
-	function GetApproval(){
+	function GetApproval($exists){
 		
 		// get needed items
 		$groups = get_import_items($this->sql_group_name,$this->sql_group_id,$this->sql_group_table);
+		if (!$exists)
+			return $groups;
+		
 		$items = $this->get_keyed_import_items($this->sql_item_data,$this->sql_item_table);
 		
 		$item_params = $this->sql_item_data;
@@ -631,10 +640,13 @@ class import_module {
 	}
 	
 	// called when we already have approval, just import the correct data
-	function HaveApproval(){
+	function HaveApproval($exists){
 		
 		// get needed items
 		$groups = get_import_items($this->sql_group_name,$this->sql_group_id,$this->sql_group_table);
+		if (!$exists)
+			return $groups;
+		
 		$items = $this->get_keyed_import_items($this->sql_item_data,$this->sql_item_table);
 		
 		// figure out what items are already connected

@@ -47,15 +47,44 @@ function export_data(){
 	
 	if ($action == ""){
 
+		$option = "";
+		$result = db_query("SELECT url from $cfg[t_content] ORDER BY url");
+		
+		// first, assemble three arrays of file information
+		if (db_has_rows($result)){
+		
+			$last_dir = '/';
+		
+			while ($row = db_fetch_row($result)){
+			
+				// directory names, without trailing /
+				$dirname = dirname($row[0] . 'x');
+				if ($dirname == '\\' || $dirname == '/')
+					$dirname = '';
+				
+				if ($last_dir != $dirname){
+					if ($last_dir != '')
+						$option .= "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";
+				
+					$last_dir = $dirname;
+				}
+			}
+			
+			if ($last_dir != '')
+				$option .= "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";		
+		}
+	
 ?><h4>Export data (single file, can be imported again)</h4>
 <form action="##pageroot##/?mode=export&amp;action=export&amp;ajax=true" method="post">
 	<table>
 	<tr><td>Export Type:</td><td>
 	<select name="type">
-		<option value="content" selected>Content</option>
+		<option value="all" selected>All</option>
+		<option value="content" selected>Content Only</option>
 		<option value="templates">Templates Only</option>
 		<option value="users">Users</option>
 	</select><input type="checkbox" name="export_hidden" value="yes" checked />Export hidden data</td></tr>
+	<tr><td>Directory</td><td><select name="directory"><?php echo $option; ?></select> <input type="checkbox" name="export_root" value="yes" />Export directory as /</td></tr>
 	<tr><td>Description:</td><td><input type="text" name="export_description" size="50" /></td></tr>
 	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.osf" /></td></tr>
 	</table>
@@ -64,35 +93,7 @@ function export_data(){
 <h4>Export as rendered HTML files (tar.gz file, cannot be imported again)</h4>
 <form action="##pageroot##/?mode=export&amp;action=export&amp;ajax=true" method="post">
 	<table>
-	<tr><td>Directory</td><td><select name="directory"><?php
-	
-	$result = db_query("SELECT url from $cfg[t_content] ORDER BY url");
-	
-	// first, assemble three arrays of file information
-	if (db_has_rows($result)){
-	
-		$last_dir = '/';
-	
-		while ($row = db_fetch_row($result)){
-		
-			// directory names, without trailing /
-			$dirname = dirname($row[0] . 'x');
-			if ($dirname == '\\' || $dirname == '/')
-				$dirname = '';
-			
-			if ($last_dir != $dirname){
-				if ($last_dir != '')
-					echo "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";
-			
-				$last_dir = $dirname;
-			}
-		}
-		
-		if ($last_dir != '')
-			echo "\t\t<option value=\"" . htmlentities($last_dir) . '">' . htmlentities($last_dir) . "</option>\n";		
-	}
-	
-	?></select>
+	<tr><td>Directory</td><td><select name="directory"><?php echo $option; ?></select>
 	<input type="checkbox" name="export_hidden" value="yes" checked />Export hidden data</td></tr>
 	<tr><td>Filename:</td><td><input type="text" name="export_filename" size="50" value="<?php echo htmlentities(str_replace(array("https://","http://","/"),array('','','_'),$cfg['rootURL'])) . '.' . date("m-d-Y"); ?>.tar.gz" /></td></tr>
 	</table>
@@ -106,6 +107,10 @@ function export_data(){
 
 			
 		switch ($type){
+			case "all":
+				export_all();
+				break;
+		
 			case "content":
 				export_content();
 				break;
@@ -136,8 +141,8 @@ function export_gzip(){
 	global $cfg;
 
 	$directory = get_post_var('directory');
-	if ($directory == "")
-		return onnac_error("No directory specified!");
+	if ($directory == "" || $directory[0] != '/' || (strlen($directory) != 1 && $directory[strlen($directory)-1] == '/'))
+		return onnac_error("Invalid directory specified!");
 	
 	// make special provision for hidden data
 	$export_hidden = "";
@@ -192,61 +197,41 @@ function export_gzip(){
 	}
 }
 
+// very simple function actually
+function export_all(){
+	
+	$content = get_content_array();
+	if ($content === false)
+		return;
+	
+	$templates = get_template_array();
+	if ($templates === false)
+		return;
+
+	$menus = get_menu_array();
+	if ($menus === false)
+		return;
+	
+	$banners = get_banner_array();
+	if ($banners === false)
+		return;
+	
+	$output = array();
+	$output['content'] = $content;
+	$output['templates'] = $templates;
+	$output['banners'] = $banners;
+	$output['menus'] = $menus;
+		
+	do_export('all',$output);
+}
+
 
 function export_content(){
 
-	global $cfg;
-	$error = false;
-	
-
-	// make special provision for hidden data
-	$export_hidden = "";
-	if (get_post_var('export_hidden') != "yes")
-		$export_hidden = "WHERE a.hidden <> 1 ";
-
-	// export content first
-	$result = db_query("SELECT a.url_hash, a.url, a.page_execute, a.hidden, a.page_title, a.page_content,  " . db_get_timestamp_query('a.last_update') . " as last_update, b.name as banner_name, c.name as menu_name, d.template_name from $cfg[t_content] a 
-	LEFT OUTER JOIN $cfg[t_banners] b ON a.banner_id = b.banner_id 
-	LEFT OUTER JOIN $cfg[t_menus] c ON a.menu_id = c.menu_id
-	LEFT OUTER JOIN $cfg[t_templates] d ON a.template_id = d.template_id
-	$export_hidden");
-	
-	$content = array();
-	if (db_has_rows($result)){
-		// put in an array
-		while ($row = db_fetch_assoc($result))
-			$content[] = $row;
-	}else{
-		echo "<h4>Export Data</h4><p>Error retrieving content!</p><pre>" . db_error() . "</pre>";
-		$error = true;
-	}
-	
-	if ($error == false){
-		$templates = get_template_array();
-		if ($templates === false)
-			$error = true;
-	}
-	
-	if ($error == false){
-		$menus = get_menu_array();
-		if ($menus === false)
-			$error = true;
-	}
-	
-	if ($error == false){
-		$banners = get_banner_array();
-		if ($banners === false)
-			$error = true;
-	}
-	
-	if ($error == false){
-	
+	$content = get_content_array();
+	if ($content != false){
 		$output = array();
 		$output['content'] = $content;
-		$output['templates'] = $templates;
-		$output['banners'] = $banners;
-		$output['menus'] = $menus;
-		
 		do_export('content',$output);
 	}
 }
@@ -260,6 +245,47 @@ function export_templates(){
 		do_export('templates',$output);
 	}
 }
+
+// get array representing content
+function get_content_array(){
+
+	global $cfg;
+
+	$directory = get_post_var('directory');
+	if ($directory == "" || $directory[0] != '/' || (strlen($directory) != 1 && $directory[strlen($directory)-1] == '/'))
+		return onnac_error("Invalid directory specified!");
+	
+	$as_root = 0;
+	if (get_post_var('export_root') == 'yes')
+		$as_root = strlen($directory);
+	
+	// make special provision for hidden data
+	$export_hidden = "";
+	if (get_post_var('export_hidden') != "yes")
+		$export_hidden = "AND hidden <> 1 ";
+
+	// export content
+	$result = db_query("SELECT a.url_hash, a.url, a.page_execute, a.hidden, a.page_title, a.page_content,  " . db_get_timestamp_query('a.last_update') . " as last_update, b.name as banner_name, c.name as menu_name, d.template_name from $cfg[t_content] a 
+	LEFT OUTER JOIN $cfg[t_banners] b ON a.banner_id = b.banner_id 
+	LEFT OUTER JOIN $cfg[t_menus] c ON a.menu_id = c.menu_id
+	LEFT OUTER JOIN $cfg[t_templates] d ON a.template_id = d.template_id WHERE url LIKE '" . db_escape_string($directory) . "%'	$export_hidden ORDER BY url");
+	
+	$content = array();
+	if (db_has_rows($result)){
+		// put in an array
+		while ($row = db_fetch_assoc($result)){
+			// fix this up, recalculate it
+			$row['url'] = substr($row['url'],$as_root);
+			$row['url_hash'] = md5($row['url']);
+			$content[] = $row;
+		}
+	}else{
+		return onnac_error("Error retrieving content!");
+	}
+
+	return $content;
+}
+
 
 // get array representing templates
 function get_template_array(){
@@ -276,8 +302,7 @@ function get_template_array(){
 		while ($row = db_fetch_assoc($result))
 			$templates[] = $row;
 	}else{
-		echo "<h4>Export Data</h4><p>Error retrieving templates!</p><pre>" . db_error() . "</pre>";
-		return false;
+		return onnac_error("Error retrieving templates!");
 	} 
 
 	return $templates;
@@ -309,8 +334,7 @@ function get_menu_array(){
 			$menus[] = $m_info;
 		}
 	}else{
-		echo "<h4>Export Data</h4><p>Error retrieving menus!</p>";
-		return false;
+		return onnac_error("Error retrieving menus!");
 	}
 
 	return $menus;
@@ -342,8 +366,7 @@ function get_banner_array(){
 			$banners[] = $m_info;
 		}
 	}else{
-		echo "<h4>Export Data</h4><p>Error retrieving banners!</p>";
-		return false;
+		return onnac_error("Error retrieving banners!");
 	}
 
 	return $banners;
