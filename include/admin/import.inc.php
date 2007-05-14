@@ -310,7 +310,6 @@ function import_content($imported,$user_approved,$install_mode){
 	
 	// get all needed items into an array
 	$content = get_import_items('url_hash',db_get_timestamp_query('last_update'),$cfg['t_content']);
-
 	
 	// this comes next
 	if (!$user_approved){
@@ -385,15 +384,23 @@ function import_content($imported,$user_approved,$install_mode){
 			
 				// escape EVERYTHING, we dont need useless errors
 				array_walk($node,'db_total_escape');
+				
+				// if it already exists, then give it the modified date that is 
+					// greatest -- always touch the other_update, however
+				if (array_key_exists($node['url_hash'],$content) && $node['last_update'] < $content[$node['url_hash']])
+					$date = date("Y-m-d h:i:s",$content[$node['url_hash']]);
+				else
+					$date = date("Y-m-d h:i:s",$node['last_update']);
 			
 				// add to the query string
-				// if it exists, then do an UPDATE, otherwise do an INSERT
+				// if it exists, then do an UPDATE, otherwise do an INSERT	
 				if (array_key_exists($node['url_hash'],$content)){
-					$query[] = "UPDATE $cfg[t_content] SET last_update_by = '" . $username . "', page_execute = '$node[page_execute]', page_title = '$node[page_title]', hidden = '$node[hidden]', page_content = '$node[page_content]', last_update = NOW(), banner_id = '$banner_id', menu_id = '$menu_id', template_id = '$template_id' WHERE url_hash = '$node[url_hash]';";
+				
+					$query[] = "UPDATE $cfg[t_content] SET last_update_by = '" . $username . "', page_execute = '$node[page_execute]', page_title = '$node[page_title]', hidden = '$node[hidden]', page_content = '$node[page_content]', other_update = NOW(), last_update = '$date', banner_id = '$banner_id', menu_id = '$menu_id', template_id = '$template_id' WHERE url_hash = '$node[url_hash]';";
 				}else{
 					$query[] = 
 "INSERT INTO $cfg[t_content] (last_update_by, url_hash, url, page_execute, page_title, hidden, page_content, last_update, other_update, last_visit, banner_id, menu_id, template_id) 
-VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute]', '$node[page_title]', '$node[hidden]', '$node[page_content]', NOW(), NOW(), NOW(), '$banner_id', '$menu_id', '$template_id');";
+VALUES('" . $username . "', '$node[url_hash]', '$node[url]', '$node[page_execute]', '$node[page_title]', '$node[hidden]', '$node[page_content]', '$date', NOW(), NOW(), '$banner_id', '$menu_id', '$template_id');";
 				}
 			}
 		}

@@ -568,7 +568,11 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 <script type="text/javascript"><!--
 
 	var curEditor = '';
-	var initialCode = unescape("<?php echo rawurlencode(htmlentities($content)); ?>");
+	// this exists because of the nasty textarea we have to use w/codepress
+	var initialEscapedCode = unescape("<?php echo rawurlencode(htmlentities($content)); ?>");
+	var initialPureCode = unescape("<?php echo rawurlencode($content); ?>");
+	var isPure = true;
+	
 	var cpLoaded = false;
 	var ajax = new sack();
 
@@ -582,7 +586,11 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 					return cp.getCode();
 				break;
 			default:
-				return initialCode;
+				// just in here for codepress's sake
+				if (isPure)
+					return initialPureCode;
+				else
+					return initialEscapedCode;
 		}
 	}
 	
@@ -615,8 +623,13 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		var fck = document.getElementById("div_fckedit");
 		var oElement = document.getElementById('editor_syntax');
 		
+		
+		
 		switch (newEditor){
 			case "cp":
+				// turn this off
+				isPure = false;
+				
 				cpe.style.display = 'block';
 				fck.style.display = 'none';
 				if (!cpLoaded){
@@ -644,7 +657,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	// revert editor contents
 	function revert_text(){
 		if (window.confirm("Revert to the original contents?"))
-			setCode(initialCode);
+			setCode(initialPureCode);
 	}
 	
 	function ed_load(){

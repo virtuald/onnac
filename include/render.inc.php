@@ -121,10 +121,14 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 		return false;
 	
 	}
-	
-	
+
+	// configure elink mode
+	$cfg['elink_mode'] = false;
+	if (get_get_var('elink_mode') == 'on' && $simulate == false)
+		$cfg['elink_mode'] = true;
+
 	// TODO: Optimize the caching stuff.. 
-	
+		
 	// do not enable this stuff if the page is allowed to execute. Let it manually decide its
 	// own caching stuff, if need be.. 
 	if (!$simulate){
@@ -158,11 +162,6 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 		$cfg['page_root'] = $cfg['rootURL'];
 	else
 		$cfg['page_root'] = $cfg['rootURL'] . substr($input_url,0,$pos);
-	
-	// configure elink mode
-	$cfg['elink_mode'] = false;
-	if (get_get_var('elink_mode') == 'on' && $simulate == false)
-		$cfg['elink_mode'] = true;
 	
 	
 	// TODO: Inhibit counters on some pages
