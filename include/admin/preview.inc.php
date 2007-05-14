@@ -61,7 +61,7 @@ function preview(){
 				
 					if (db_has_rows($result)){
 						while($row = db_fetch_row($result)){
-							echo "<img src=\"" . htmlentnties($row[0]) . "\" alt=\"" . htmlentities($row[1]) . "\"><br>";
+							echo "<img src=\"" . htmlentities($row[0]) . "\" alt=\"" . htmlentities($row[1]) . "\"><br>";
 							echo "Src: " . htmlentities($row[0]) . "<br>Alt: " . htmlentities($row[1]) . "<p>";
 						}
 					}else{
@@ -124,6 +124,8 @@ function preview(){
 			break;
 	}
 
-?><form><input type=button value="Back" onClick="history.back()"></form><?php
+
 
 }
+
+?>

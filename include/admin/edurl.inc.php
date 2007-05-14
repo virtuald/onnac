@@ -776,7 +776,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 
 	// TODO: Get rid of this or fix it, its pretty useless as is.. 
 	function previewWindow(type,groupid){
-		window.open("##pageroot##/?mode=preview&amp;type=" + type + "&amp;group=" + groupid ,"AdminPreview","");
+		window.open("##pageroot##/?mode=preview&type=" + type + "&group=" + groupid ,"AdminPreview","");
 	}
 	
 //--></script>
