@@ -1,0 +1,41 @@
+This is a short TODO list of stuff that I am planning on implementing 
+within Onnac in the near future, probably. This list isn't in any particular
+order, however. Ones with *** by them means that I really should do those soon 
+
+	-- Page caching
+	-- File Browser View
+		-- Directory renaming
+		-- Show 'Advanced' attributes
+		-- Edit file on double click, instead of 'edit' button
+	-- Export parameters
+		-- Time constrained
+		-- Individual files
+	-- "Site map" generator
+		-- Google compatible XML file? 
+	-- Automated dead link finder
+	-- Support index.html/index.htm/index.php files
+		-- Maybe remove bare directories in the future?
+	-- *** Add 'preview' page support
+		-- Rollback the preview
+		-- Versioning support, maybe like subversion
+	-- Support for existing index pages (when a physical directory exists, but files do not)
+		-- need to redefine that one
+	-- Possible wiki-style templates
+		-- this would replace/enhance existing menus/banners
+		-- this requires page caching, for sure
+	-- Multiple user access
+		-- This is sorta implemented, but there is no 'control' of where the user can actually
+		do things. It will take some extra DB tables, I suspect
+		-- Add roles
+	-- Remote website sync
+		-- decent import/export support is definitely key to making this happen. I want it so that on
+		my local development webserver I can hit 'sync' and it will send the site out to production.
+		There are a number of issues that prevent this at the moment, but it would be nice. However,
+		if versioning support was implemented, then this feature would *almost* be moot. 
+		
+If theres something that really bugs you about Onnac, then drop me a line and if it sounds useful,
+I'll do it, or at least put it on the todo list. You can always submit patches too! :)
+
+
+
+	

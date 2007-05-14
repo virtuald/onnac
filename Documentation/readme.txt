@@ -82,11 +82,11 @@ For API notes, refer to api.txt
 ---------------------
 
 If Onnac doesn't do something that you think it should be able to do, or
-if you're just bored and want to write some PHP, then contact us and maybe
-we can give you some good ideas. Theres still a lot of ideas I've been
-meaning to implement, I've just never gotten around to doing it. 
+if you're just bored and want to write some PHP, then contact me and maybe
+I can give you some good ideas. Theres still a lot of ideas I've been
+meaning to implement, I've just never gotten around to doing it. See todo.txt
 
-	Dustin Spicuzza (randomperson83@hotmail.com)
+	Dustin Spicuzza (dustin@virtualroadside.com)
 
 
 5. Contributors
@@ -94,4 +94,4 @@ meaning to implement, I've just never gotten around to doing it.
 
 Thanks to the many :p contributors for helping out with Onnac!
 
-	Jon Anderson (jranders@cs.wmich.edu)
+	Jon Anderson (early alpha versions, 0.0.6.x)
