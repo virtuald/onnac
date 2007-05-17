@@ -320,13 +320,16 @@ function import_content($imported,$user_approved,$install_mode){
 	global $auth,$cfg;
 	
 	$mount_point = get_post_var('mount_point');
-	if ($mount_point == "" || $mount_point[0] != '/' || (strlen($mount_point) != 1 && $mount_point[strlen($mount_point)-1] == '/'))
-		return onnac_error("Invalid mount point specified!");
 	
-	if (!$install_mode)
-		$username = $auth->username;
-	else
+	if ($install_mode){
 		$username = "installer";
+		$mount_point = "/";
+	}else{
+	
+		$username = $auth->username;
+		if ($mount_point == "" || $mount_point[0] != '/' || (strlen($mount_point) != 1 && $mount_point[strlen($mount_point)-1] == '/'))
+			return onnac_error("Invalid mount point specified!");
+	}
 	
 	// sanity check for array
 	if (!array_key_exists('content',$imported))
