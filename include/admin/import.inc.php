@@ -116,7 +116,7 @@ function import_data(){
 				return onnac_error("Could not begin SQL transaction!");
 		
 			// automatically detect import type, and do it!
-			if ($imported['dumptype'] == 'content'){
+			if ($imported['dumptype'] == 'content' || $imported['dumptype'] == 'all'){
 				$ret = import_content($imported,$user_approved,false);
 			}else if ($imported['dumptype'] == 'templates'){
 				$ret = import_templates($imported,$user_approved,false);
@@ -805,7 +805,7 @@ class import_module {
 				
 							// add order field if it exists
 							if ($this->sql_order_field != ''){
-								if (is_numeric($n_item[$this->sql_order_field]))
+								if (ctype_digit($n_item[$this->sql_order_field]))
 									$new_link[] = $n_item[$this->sql_order_field];
 								else
 									return db_rollback_transaction("Error inserting $this->type item! Invalid '$this->sql_order_field' field in import file!");

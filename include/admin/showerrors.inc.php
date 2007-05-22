@@ -51,10 +51,15 @@ function showerrors(){
 		// clear all? 
 		if ($_GET['clear'] == "all"){
 			db_is_valid_result(db_query("DELETE FROM $cfg[t_errors]"));
+			header( "Location:$cfg[page_root]/?mode=showerrors");
+			return;
 		}else{
 		
-			if (is_numeric($_GET['clear'])){
-				db_is_valid_result(db_query("DELETE FROM $cfg[t_errors] WHERE error_id = '" . db_escape_string($_GET['clear']) . "'"));
+			if (ctype_digit($_GET['clear'])){
+				if (db_is_valid_result(db_query("DELETE FROM $cfg[t_errors] WHERE error_id = '" . db_escape_string($_GET['clear']) . "'"))){
+					header( "Location:$cfg[page_root]/?mode=showerrors");
+					return;
+				}
 			}
 		}		
 	
@@ -70,7 +75,7 @@ function showerrors(){
 		$by = "ASC";
 	
 	if (db_has_rows($result)){
-		echo "<a href=\"##pageroot##/?mode=showerrors&amp;clear=all\">Clear all 404 errors</a><p><table border=\"1\"><thead><tr><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=url&amp;by=$by\">URL</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=referer&by=$by\">Referer</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=ip&amp;by=$by\">IP</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=time&amp;by=$by\">Time</a></strong></td><td>&nbsp;</td></tr></thead>";
+		echo "<a href=\"##pageroot##/?mode=showerrors&amp;clear=all\">Clear all 404 errors</a><p><table border=\"1\" width=\"100%\"><thead><tr><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=url&amp;by=$by\">URL</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=referer&by=$by\">Referer</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=ip&amp;by=$by\">IP</a></strong></td><td><strong><a href=\"##pageroot##/?mode=showerrors&amp;sort=time&amp;by=$by\">Time</a></strong></td><td>&nbsp;</td></tr></thead>";
 		
 		while($row = db_fetch_row($result))
 			echo "<tr><td>" . htmlentities($row[0]) . "</td><td>" . htmlentities($row[1]) . "</td><td>$row[2]</td><td>" . date("F j, Y, g:i a",$row[3]) . "</td><td><a href=\"##pageroot##/?mode=showerrors&amp;clear=$row[4]\">Remove</a></td></tr>";

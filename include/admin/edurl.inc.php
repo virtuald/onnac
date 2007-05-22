@@ -245,7 +245,7 @@ function edurl($error = "no"){
 
 				
 				// really SHOULD validate the id, but oh well... 
-				if ($t_str != false && is_numeric($item_id) && $dir_name != ''){
+				if ($t_str != false && ctype_digit($item_id) && $dir_name != ''){
 				
 					$exclude = '';
 					if ($exclude_hidden == 'yes')
@@ -941,7 +941,7 @@ function edurl_add_data($url,$be_verbose){
 		$templateID = db_escape_string($_POST['edurl_template']);
 	}
 	
-	if (!is_numeric($templateID)){
+	if (!ctype_digit($templateID)){
 		onnac_error("Invalid value for parameter 'template'");
 		return 1;
 	}
@@ -953,7 +953,7 @@ function edurl_add_data($url,$be_verbose){
 		$bannerID = db_escape_string($_POST['edurl_banner']);
 	}
 	
-	if (!is_numeric($bannerID)){
+	if (!ctype_digit($bannerID)){
 		onnac_error("Invalid value for parameter 'bannerID': $bannerID");
 		return 1;
 	}	
@@ -965,7 +965,7 @@ function edurl_add_data($url,$be_verbose){
 		$menuID = db_escape_string($_POST['edurl_menu']);
 	}
 	
-	if (!is_numeric($menuID)){
+	if (!ctype_digit($menuID)){
 		onnac_error("Invalid value for parameter 'menuID': $menuID");
 		return 1;
 	}

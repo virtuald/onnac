@@ -487,11 +487,12 @@ $q_errors =
 			$r_dir = $ua['path'];
 		
 		// create .htaccess files
-		$htaccess =  "ErrorDocument 403 $r_dir/error403.html\n";
-		$htaccess .= "ErrorDocument 404 $r_dir/error404.html\n\n";
-		$htaccess .= "#Rewrite engine\n";
+		$htaccess = "#Rewrite engine\n";
 		$htaccess .= "<IfModule mod_rewrite.c>\n";
-		$htaccess .= "RewriteEngine On\n";
+		$htaccess .= "RewriteEngine On\n\n";
+		$htaccess .= "# the following two options need to be uncommented on some servers, such as godaddy.com hosted sites\n";
+		$htaccess .= "# Options +FollowSymlinks\n";
+		$htaccess .= "# RewriteBase $r_dir/\n\n";
 		$htaccess .= "RewriteCond %{REQUEST_FILENAME} !-f\n";
 		$htaccess .= "RewriteRule ^(.*) $r_dir/index.php?url=/$1 [QSA,NS]\n";
 		$htaccess .= "</IfModule>\n\n";

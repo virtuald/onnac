@@ -933,7 +933,7 @@ function m_unhighlight(item){
 	
 	function get_name($id,$sql_name,$sql_item_name,$sql_table){
 	
-		if ($id == '' || !is_numeric($id))
+		if ($id == '' || !ctype_digit($id))
 			return false;
 			
 		$result = db_query("SELECT $sql_name FROM $sql_table WHERE $sql_item_name = '$id'");

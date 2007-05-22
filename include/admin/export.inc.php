@@ -80,7 +80,7 @@ function export_data(){
 	<tr><td>Export Type:</td><td>
 	<select name="type">
 		<option value="all" selected>All</option>
-		<option value="content" selected>Content Only</option>
+		<option value="content">Content Only</option>
 		<option value="templates">Templates Only</option>
 		<option value="users">Users</option>
 	</select><input type="checkbox" name="export_hidden" value="yes" checked />Export hidden data</td></tr>
