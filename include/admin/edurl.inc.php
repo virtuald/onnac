@@ -634,7 +634,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				fck.style.display = 'none';
 				if (!cpLoaded){
 					var cpi = document.getElementById('cp_container');
-					cpi.innerHTML = '<text' + 'area id="cp" class="codepress ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</text' + 'area>';
+					cpi.innerHTML = '<text' + 'area id="cp" class="codepress autocomplete-off ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</text' + 'area>';
 					CodePress.run();
 					cpLoaded = true;
 					cp.setSaveHandler(saveBegin);
@@ -839,7 +839,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 			<option value="javascript">Javascript</option>
 			<option value="php">PHP</option>
 			<option value="text">Plain Text</option>
-		</select></p>
+		</select> <a href="javascript:cp.toggleAutoComplete()">Toggle Autocomplete</a></p>
 		<div id="cp_container"></div>
 		<br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
 	</div>

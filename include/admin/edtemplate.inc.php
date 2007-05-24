@@ -220,7 +220,7 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 	function ed_load(){
 	
 		var cpi = document.getElementById('cp_container');
-		cpi.innerHTML = '<text' + 'area id="cp" class="codepress html">' + initialCode + '</text' + 'area>';
+		cpi.innerHTML = '<text' + 'area id="cp" class="codepress autocomplete-off html">' + initialCode + '</text' + 'area>';
 		CodePress.run();
 		cp.setSaveHandler(saveBegin);
 		document.getElementById('editor_syntax').options[1].selected = true;
@@ -310,7 +310,7 @@ function edtemplate_render_editor($template_id,$template_name,$content){
 	<option value="javascript">Javascript</option>
 	<option value="php">PHP</option>
 	<option value="text">Plain Text</option>
-</select></p>
+</select> <a href="javascript:cp.toggleAutoComplete()">Toggle Autocomplete</a></p>
 <div id="adm_edarea_save"></div>
 <div id="cp_container"></div>
 <br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
