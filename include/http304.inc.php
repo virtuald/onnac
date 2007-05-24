@@ -1,7 +1,12 @@
 <?php
-/*Optimisation: Enable support for HTTP/1.x conditional requests in PHP.*/
-// This code is licensed under "Creative-Commons Attribution-ShareAlike 2.0 France"
-// http://creativecommons.org/licenses/by-sa/2.0/fr/
+/*
+* $Id$
+*
+* Optimisation: Enable support for HTTP/1.x conditional requests in PHP.
+*
+* This code is licensed under "Creative-Commons Attribution-ShareAlike 2.0 France"
+* http://creativecommons.org/licenses/by-sa/2.0/fr/
+*/
   
 // Modified: Removed compression stuff, reformatted some comments and messy code
 

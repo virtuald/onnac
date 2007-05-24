@@ -1,5 +1,8 @@
 <?php
 /* vim: set ts=4 sw=4: */
+//
+// $Id$
+//
 // +----------------------------------------------------------------------+
 // | PHP Version 4                                                        |
 // +----------------------------------------------------------------------+
@@ -19,7 +22,7 @@
 // Taken from PHP::Pear, modified for the Onnac project to be used
 // without requiring Pear to be installed. Made necessary modifications.
 //
-// $Id: Tar.php,v 1.39 2006/12/22 19:20:08 cellog Exp $
+// Pear Id: Tar.php,v 1.39 2006/12/22 19:20:08 cellog Exp
 
 //require_once 'PEAR.php';
 

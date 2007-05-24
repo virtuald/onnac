@@ -1,4 +1,6 @@
 /* 
+	$Id$
+	
 	Common Javascript functions for Onnac administrative interface
 */
 
