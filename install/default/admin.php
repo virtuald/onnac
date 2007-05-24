@@ -1,4 +1,5 @@
 <?php
+	// $Id$
 	// load the administrative interface AND template from the admin directory
 	// this facilitates simple upgrades
 	

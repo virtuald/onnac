@@ -388,6 +388,10 @@ function do_export($type,$output){
 	$output['export_description'] = get_post_var('export_description');
 	$output['onnac_version'] = 		$cfg['onnac_version'];
 	
+	// crazy hack to use subversion revision strings.. 
+	$RevStr = '$Revision$';
+	$output['svn_version'] = substr($RevStr,10);
+	
 	// show output array structure, if you really want to know
 	//echo "<pre>";
 	//print_r($output);

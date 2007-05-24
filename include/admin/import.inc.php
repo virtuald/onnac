@@ -163,8 +163,15 @@ function get_import_data($filename){
 	
 		echo '<table><tr><td>Export Type:</td><td>'. htmlentities($imported['dumptype']) . "</td></tr><tr><td>Export Date:</td><td>" . htmlentities($imported['export_date']) . '</td></tr><tr><td>Description:</td><td>' . htmlentities($imported['export_description']) . '</td></tr>';
 	
-		if (array_key_exists('onnac_version',$imported))
-			echo "<tr><td>Exported from:</td><td>Onnac $imported[onnac_version]</td></tr>";
+		if (array_key_exists('onnac_version',$imported)){
+			echo "<tr><td>Exported from:</td><td>Onnac $imported[onnac_version] "
+			
+			if (array_key_exists('svn_version',$imported))
+				echo ", SVN Rev. $imported[svn_version]";
+				
+			echo "</td></tr>";
+			
+		}
 		
 		echo '</table>';
 	

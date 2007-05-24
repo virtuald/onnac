@@ -1,5 +1,7 @@
 <?php
 /*
+* $Id$
+*
 * Copyright (c) 2006-2007, Dustin Spicuzza
 * All rights reserved.
 * Redistribution and use in source and binary forms, with or without
@@ -107,6 +109,10 @@ $output['export_description'] = "Onnac installation file";
 
 global $cfg;
 $output['onnac_version'] = $cfg['onnac_version'];
+
+// crazy hack to use subversion revision strings.. 
+$RevStr = '$Revision$';
+$output['svn_version'] = substr($RevStr,10);
 
 
 // Now, send the export data to the output
