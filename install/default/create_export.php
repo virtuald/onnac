@@ -112,7 +112,7 @@ $output['onnac_version'] = $cfg['onnac_version'];
 
 // crazy hack to use subversion revision strings.. 
 $RevStr = '$Revision$';
-$output['svn_version'] = substr($RevStr,10);
+$output['svn_version'] = substr($RevStr,11,strlen($RevStr)-13);
 
 
 // Now, send the export data to the output

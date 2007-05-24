@@ -390,7 +390,7 @@ function do_export($type,$output){
 	
 	// crazy hack to use subversion revision strings.. 
 	$RevStr = '$Revision$';
-	$output['svn_version'] = substr($RevStr,10);
+	$output['svn_version'] = substr($RevStr,11,strlen($RevStr)-13);
 	
 	// show output array structure, if you really want to know
 	//echo "<pre>";
