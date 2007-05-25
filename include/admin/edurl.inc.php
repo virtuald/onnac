@@ -943,8 +943,13 @@ function edurl_add_data($url,$be_verbose){
 		$templateID = db_escape_string($_POST['edurl_template']);
 	}
 	
-	if (!ctype_digit($templateID)){
-		onnac_error("Invalid value for parameter 'template'");
+	if ($templateID[0] == '-'){
+		if (!ctype_digit(substr($templateID,1))){
+			onnac_error("Invalid value for parameter 'templateID': $templateID");
+			return 1;
+		} 
+	}else if (!ctype_digit($templateID)){
+		onnac_error("Invalid value for parameter 'templateID': $templateID");
 		return 1;
 	}
 		
@@ -972,7 +977,12 @@ function edurl_add_data($url,$be_verbose){
 		$menuID = db_escape_string($_POST['edurl_menu']);
 	}
 	
-	if (!ctype_digit($menuID)){
+	if ($menuID[0] == '-'){
+		if (!ctype_digit(substr($menuID,1))){
+			onnac_error("Invalid value for parameter 'menuID': $menuID");
+			return 1;
+		} 
+	}else if (!ctype_digit($menuID)){
 		onnac_error("Invalid value for parameter 'menuID': $menuID");
 		return 1;
 	}
