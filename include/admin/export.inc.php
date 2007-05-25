@@ -77,7 +77,7 @@ function export_data(){
 		}
 	
 ?><h4>Export data (single file, can be imported again)</h4>
-<form action="##pageroot##/?mode=export&amp;action=export&amp;ajax=true" method="post">
+<form action="##pageroot##/?mode=export&amp;action=export" method="post">
 	<table>
 	<tr><td>Export Type:</td><td>
 	<select name="type">
@@ -202,29 +202,40 @@ function export_gzip(){
 // very simple function actually
 function export_all(){
 	
-	$content = get_content_array();
+	$user_approved = false;
+	
+	if (get_get_var('ajax') == 'true')
+		$user_approved = true;
+	
+	show_export_form_start($user_approved);
+	
+	$content = get_content_array($user_approved);
 	if ($content === false)
 		return;
 	
-	$templates = get_template_array();
+	$templates = get_template_array($user_approved);
 	if ($templates === false)
 		return;
 
-	$menus = get_menu_array();
+	$menus = get_menu_array($user_approved);
 	if ($menus === false)
 		return;
 	
-	$banners = get_banner_array();
+	$banners = get_banner_array($user_approved);
 	if ($banners === false)
 		return;
 	
-	$output = array();
-	$output['content'] = $content;
-	$output['templates'] = $templates;
-	$output['banners'] = $banners;
-	$output['menus'] = $menus;
-		
-	do_export('all',$output);
+	show_export_form_end($user_approved);
+	
+	if ($user_approved){
+		$output = array();
+		$output['content'] = $content;
+		$output['templates'] = $templates;
+		$output['banners'] = $banners;
+		$output['menus'] = $menus;
+			
+		do_export('all',$output);
+	}
 }
 
 
@@ -248,8 +259,49 @@ function export_templates(){
 	}
 }
 
+// shows an export selection form
+function show_export_form_start($user_approved){
+	if ($user_approved)
+		return;
+	
+	?><script type="text/javascript"><!--
+	
+	// use CSS classes to distinguish the checkboxes
+	function select_all_chk(val){
+		var chk = getElementsByClassName('chk');
+		for (var i = 0;i < chk.length;i++){
+			chk[i].checked = val;
+		}
+		
+	}
+	
+	//--></script>
+	<form method="post" action="##pageroot##/?mode=export&amp;action=export&amp;ajax=true">
+	<p>
+	Export Type: <?php echo htmlentities(get_post_var('type')); ?><br/>
+	Export Hidden: <?php echo htmlentities(get_post_var('export_hidden')); ?><br/>
+	Export Directory: <?php echo htmlentities(get_post_var('directory')); ?><br/>
+	Export Description: <?php echo htmlentities(get_post_var('export_description')); ?><br/>
+	Export Filename: <?php echo htmlentities(get_post_var('export_filename')); ?></p>
+	<input type="submit" value="Continue Export" /> <a href="javascript:select_all_chk(false);">Deselect all</a> | <a href="javascript:select_all_chk(true);">Select all</a>
+	<input type="hidden" name="type" value="<?php echo htmlentities(get_post_var('type')); ?>" />
+	<input type="hidden" name="export_hidden" value="<?php echo htmlentities(get_post_var('export_hidden')); ?>" />
+	<input type="hidden" name="directory" value="<?php echo htmlentities(get_post_var('directory')); ?>" />
+	<input type="hidden" name="export_description" value="<?php echo htmlentities(get_post_var('export_description')); ?>" />
+	<input type="hidden" name="export_filename" value="<?php echo htmlentities(get_post_var('export_filename')); ?>" />
+<?php
+		
+}
+
+function show_export_form_end($user_approved){
+	if ($user_approved)
+		return;
+	echo '<input type="submit" value="Continue Export" /> <a href="javascript:select_all_chk(false);">Deselect all</a> | <a href="javascript:select_all_chk(true);">Select all</a></form>';
+}
+
+
 // get array representing content
-function get_content_array(){
+function get_content_array($user_approved){
 
 	global $cfg;
 
@@ -274,13 +326,32 @@ function get_content_array(){
 	
 	$content = array();
 	if (db_has_rows($result)){
+	
+		// display information
+		if (!$user_approved)
+			echo '<table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>URL</td><td>Title</td><td>Modify Date</td><td>Export?</td></tr>';
+	
 		// put in an array
 		while ($row = db_fetch_assoc($result)){
 			// fix this up, recalculate it
 			$row['url'] = substr($row['url'],$as_root);
 			$row['url_hash'] = md5($row['url']);
-			$content[] = $row;
+			
+			
+			if (!$user_approved){
+				$content[] = $row;
+				echo "<tr><td>" . htmlentities($row['url']) . "</td>";
+				echo "<td>" . htmlentities($row['page_title']) . "</td>";
+				echo "<td>" . date("m/d/Y g:i a",$row['last_update']) . "</td>";
+				echo "<td><input class=\"chk chk_content\" type=\"checkbox\" value=\"yes\" name=\"content_" . $row['url_hash'] . "\" checked /></td></tr>";
+				
+			}else if (get_post_var('content_' . $row['url_hash']) == 'yes')
+				$content[] = $row;
 		}
+		
+		if (!$user_approved)
+			echo "</table>";
+		
 	}else{
 		return onnac_error("Error retrieving content!");
 	}
@@ -290,7 +361,7 @@ function get_content_array(){
 
 
 // get array representing templates
-function get_template_array(){
+function get_template_array($user_approved){
 
 	global $cfg;
 
@@ -299,10 +370,30 @@ function get_template_array(){
 	$result = db_query("SELECT template_name,template," . db_get_timestamp_query('last_update') . " as last_update  FROM $cfg[t_templates]");
 	
 	$templates = array();
-	if ($result){
+	if (db_is_valid_result($result)){
+	
+		// display information
+		if (!$user_approved)
+			echo '<table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>Name</td><td>Modify Date</td><td>Export?</td></tr>';
+	
 		// put in an array
-		while ($row = db_fetch_assoc($result))
-			$templates[] = $row;
+		while ($row = db_fetch_assoc($result)){
+			$hash = urlencode($row['template_name']);
+			
+			if (!$user_approved){
+				$templates[] = $row;
+				echo "<tr><td>" . htmlentities($row['template_name']) . "</td>";
+				echo "<td>" . date("m/d/Y g:i a",$row['last_update']) . "</td>";
+				echo "<td><input class=\"chk chk_template\" type=\"checkbox\" value=\"yes\" name=\"templates_$hash\" checked /></td></tr>";
+				
+			}else if (get_post_var("templates_$hash") == 'yes')
+				$templates[] = $row;
+			
+		}
+		
+		if (!$user_approved)
+			echo "</table>";
+		
 	}else{
 		return onnac_error("Error retrieving templates!");
 	} 
@@ -313,28 +404,65 @@ function get_template_array(){
 /*
 	Get array representing menus
 */
-function get_menu_array(){
+function get_menu_array($user_approved){
 
 	global $cfg;
 
 	$result = db_query("SELECT name,menu_id FROM $cfg[t_menus]");
 	$menus = array();
 	if (db_is_valid_result($result)){
+	
+		// display information
+		if (!$user_approved)
+			echo '<table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>Menu Name</td><td>Text</td><td>Link</td><td>Export?</td></tr>';
+	
 		// make arrays
 		while ($row = db_fetch_row($result)){
+			
 			$m_info = array();
 			$m_info['name'] = $row[0];
 			$m_info['items'] = array();
 			
-			// get items
-			$m_result = db_query("SELECT a.text, a.href, b.rank FROM $cfg[t_menu_items] a, $cfg[t_menu_groups] b WHERE b.menu_id = $row[1] AND a.item_id = b.item_id");
+			$hash = md5($m_info['name']);
+			$enable_menu = true;
 			
-			if ($m_result && db_num_rows($m_result) > 0)
-				while ($m_row = db_fetch_assoc($m_result))
-					$m_info['items'][] = $m_row;
+			if (!$user_approved){
+				echo "<tr><td>" . htmlentities($m_info['name']) . "</td>";
+				echo "<td>--</td><td>--</td>";
+				echo "<td><input class=\"chk chk_menu\" type=\"checkbox\" value=\"yes\" name=\"menu_$hash\" checked /></td></tr>";
+				
+			}else if (get_post_var("menu_$hash") != 'yes')
+				$enable_menu = false;
+			
+			// get items
+			if ($enable_menu){
+				$m_result = db_query("SELECT a.text, a.href, b.rank FROM $cfg[t_menu_items] a, $cfg[t_menu_groups] b WHERE b.menu_id = $row[1] AND a.item_id = b.item_id");
+				
+				if (db_has_rows($m_result))
+					while ($m_row = db_fetch_assoc($m_result)){
+						
+						// second hash
+						$hash2 = md5($m_row['text'] . ':' . $m_row['href']);
+						
+						if (!$user_approved){
+							$m_info['items'][] = $m_row;
+							echo "<tr><td>--</td>";
+							echo "<td>" . htmlentities($m_row['text']) . "</td>";
+							echo "<td>" . htmlentities($m_row['href']) . "</td>";
+							echo "<td><input class=\"chk chk_menu\" type=\"checkbox\" value=\"yes\" name=\"menu_" . $hash . $hash2 ."\" checked /></td></tr>";
+							
+						}else if (get_post_var("menu_" . $hash . $hash2) == 'yes')
+							$m_info['items'][] = $m_row;
 					
-			$menus[] = $m_info;
+					}
+					
+				$menus[] = $m_info;
+			}
 		}
+		
+		if (!$user_approved)
+			echo "</table>";
+		
 	}else{
 		return onnac_error("Error retrieving menus!");
 	}
@@ -345,28 +473,63 @@ function get_menu_array(){
 /*
 	Get array representing banners
 */
-function get_banner_array(){
+function get_banner_array($user_approved){
 
 	global $cfg;
 
 	$result = db_query("SELECT name,banner_id FROM $cfg[t_banners]");
 	$banners = array();
 	if (db_is_valid_result($result)){
+	
+		// display information
+		if (!$user_approved)
+			echo '<table class="highlighted"><tr style="background:#000000;color:#ffffff"><td>Banner Name</td><td>Alt</td><td>Src</td><td>Export?</td></tr>';
+	
 		// make arrays
 		while ($row = db_fetch_row($result)){
 			$m_info = array();
 			$m_info['name'] = $row[0];
 			$m_info['items'] = array();
 			
-			// get items
-			$m_result = db_query("SELECT a.src, a.alt FROM $cfg[t_banner_items] a, $cfg[t_banner_groups] b WHERE b.banner_id = $row[1] AND a.item_id = b.item_id");
+			$hash = md5($m_info['name']);
+			$enable_menu = true;
 			
-			if ($m_result && db_num_rows($m_result) > 0)
-				while ($m_row = db_fetch_assoc($m_result))
-					$m_info['items'][] = $m_row;
+			if (!$user_approved){
+				echo "<tr><td>" . htmlentities($m_info['name']) . "</td>";
+				echo "<td>--</td><td>--</td>";
+				echo "<td><input class=\"chk chk_banner\" type=\"checkbox\" value=\"yes\" name=\"banner_$hash\" checked /></td></tr>";
+				
+			}else if (get_post_var("banner_$hash") != 'yes')
+				$enable_menu = false;
+			
+			// get items
+			if ($enable_menu){
+				$m_result = db_query("SELECT a.src, a.alt FROM $cfg[t_banner_items] a, $cfg[t_banner_groups] b WHERE b.banner_id = $row[1] AND a.item_id = b.item_id");
+				
+				if (db_has_rows($m_result))
+					while ($m_row = db_fetch_assoc($m_result)){
 					
-			$banners[] = $m_info;
+						// second hash
+						$hash2 = md5($m_row['src'] . ':' . $m_row['alt']);
+						
+						if (!$user_approved){
+							$m_info['items'][] = $m_row;
+							echo "<tr><td>--</td>";
+							echo "<td>" . htmlentities($m_row['src']) . "</td>";
+							echo "<td>" . htmlentities($m_row['alt']) . "</td>";
+							echo "<td><input class=\"chk chk_banner\" type=\"checkbox\" value=\"yes\" name=\"banner_" . $hash . $hash2 ."\" checked /></td></tr>";
+							
+						}else if (get_post_var("banner_" . $hash . $hash2) == 'yes')
+							$m_info['items'][] = $m_row;
+				
+					}
+					
+				$banners[] = $m_info;
+			}
 		}
+		if (!$user_approved)
+			echo "</table>";
+		
 	}else{
 		return onnac_error("Error retrieving banners!");
 	}
@@ -393,10 +556,10 @@ function do_export($type,$output){
 	$output['svn_version'] = substr($RevStr,11,strlen($RevStr)-13);
 	
 	// show output array structure, if you really want to know
-	//echo "<pre>";
-	//print_r($output);
-	//echo "</pre>";
-	//die();
+	echo "<pre>";
+	print_r($output);
+	echo "</pre>";
+	die();
 	
 	// export format
 	echo serialize($output);

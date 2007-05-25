@@ -955,10 +955,15 @@ function edurl_add_data($url,$be_verbose){
 		$bannerID = db_escape_string($_POST['edurl_banner']);
 	}
 	
-	if (!ctype_digit($bannerID)){
+	if ($bannerID[0] == '-'){
+		if (!ctype_digit(substr($bannerID,1))){
+			onnac_error("Invalid value for parameter 'bannerID': $bannerID");
+			return 1;
+		} 
+	}else if (!ctype_digit($bannerID)){
 		onnac_error("Invalid value for parameter 'bannerID': $bannerID");
 		return 1;
-	}	
+	}
 		
 	if (!isset($_POST['edurl_menu'])){
 		onnac_error("Error in menu");
