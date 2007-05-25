@@ -556,10 +556,10 @@ function do_export($type,$output){
 	$output['svn_version'] = substr($RevStr,11,strlen($RevStr)-13);
 	
 	// show output array structure, if you really want to know
-	echo "<pre>";
+	/*echo "<pre>";
 	print_r($output);
 	echo "</pre>";
-	die();
+	die();*/
 	
 	// export format
 	echo serialize($output);
