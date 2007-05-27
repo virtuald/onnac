@@ -563,36 +563,70 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 
 	global $cfg;
 	
+	// what language should we set?
+	$cplang = $ealang = "html";
+	$cp_idx = 1;
+	$info = pathinfo($url);
+	if (array_key_exists('extension',$info)){
+		switch($info['extension']){
+			case "php":
+			case "php4":
+			case "php5":
+			case "phtml":
+				$ealang = "php";
+				$cp_idx = 3;
+				break;
+			case "js":
+				$ealang = "js";
+				$cp_idx = 2;
+				break;
+			case "css":
+				$ealang = "css";
+				$cp_idx = 0;
+				break;
+			case "txt":
+				$ealang = '';
+				$cp_idx = 4;
+				break;
+		}		
+	}
+	
+	// override setting if execute is set
+	if ($execute){
+		$ealang = "php";
+		$cp_idx = 3;
+	}
+	
 ?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
-<script type="text/javascript" src="##pageroot##/FCKeditor/fckeditor.js"></script>
-<script type="text/javascript" src="##pageroot##/codepress/codepress.js"></script>
 <script type="text/javascript" src="##pageroot##/tw-sack.js"></script>
 <script type="text/javascript"><!--
 
 	var curEditor = '';
-	// this exists because of the nasty textarea we have to use w/codepress
-	var initialEscapedCode = unescape("<?php echo rawurlencode(htmlentities($content)); ?>");
-	var initialPureCode = unescape("<?php echo rawurlencode($content); ?>");
-	var isPure = true;
-	
-	var cpLoaded = false;
+	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
+
+	var cpLoaded = false, fckLoaded = false, eaLoaded = false;
+	var cpLoading = false, fckLoading = false, eaLoading = false;
 	var ajax = new sack();
 
 	function getCode() {
 		switch (curEditor){
 			case "fck":
-				return FCKeditorAPI.GetInstance('FCKeditor').GetXHTML(true);
+				if (fckLoaded)
+					return FCKeditorAPI.GetInstance('FCKeditor').GetXHTML(true);
+				break;
 				
 			case "cp":
 				if (cpLoaded)
 					return cp.getCode();
 				break;
+			
+			case "ea":
+				if (eaLoaded)
+					return editAreaLoader.getValue('ea');
+				break; 
+				
 			default:
-				// just in here for codepress's sake
-				if (isPure)
-					return initialPureCode;
-				else
-					return initialEscapedCode;
+				return initialCode;
 		}
 	}
 	
@@ -609,6 +643,11 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 				var lang = oElement.options[oElement.selectedIndex].value;
 				cp.setCode(text,lang);
 				break;
+				
+			case "ea":
+				editAreaLoader.setValue('ea',text);
+				editAreaLoader.execCommand('resync_highlight');
+				break;
 		}
 	}
 	
@@ -623,38 +662,146 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		
 		var cpe = document.getElementById("div_codepress");
 		var fck = document.getElementById("div_fckedit");
+		var ea = document.getElementById("div_ea");
+		
+		cpe.style.display = 'none';
+		fck.style.display = 'none';
+		ea.style.display = 'none';
+		
 		var oElement = document.getElementById('editor_syntax');
-		
-		
 		
 		switch (newEditor){
 			case "cp":
-				// turn this off
-				isPure = false;
-				
-				cpe.style.display = 'block';
-				fck.style.display = 'none';
+			
 				if (!cpLoaded){
-					var cpi = document.getElementById('cp_container');
-					cpi.innerHTML = '<text' + 'area id="cp" class="codepress autocomplete-off ' + oElement.options[oElement.selectedIndex].value + '">' + getCode() + '</text' + 'area>';
-					CodePress.run();
-					cpLoaded = true;
-					cp.setSaveHandler(saveBegin);
-					curEditor = 'cp';
+					if (cpLoading)
+						return;
+				
+					cpLoading = true;
+					setMessage("Loading codepress...");
+				
+					// load the javascript file dynamically
+					loadJSFile(
+						"##pageroot##/codepress/codepress.js",
+						function(){
+							
+							document.getElementById("div_codepress").style.display = "block";
+							document.getElementById('cp_container').innerHTML = '<text' + 'area id="cp" class="codepress autocomplete-off ' + oElement.options[oElement.selectedIndex].value + '"></text' + 'area>';
+							
+							document.getElementById('cp').value = getCode();
+							curEditor = 'cp';
+							
+							CodePress.run();
+							cpLoaded = true;
+							cp.setSaveHandler(saveBegin);
+							hideMessage();
+						}
+					);
 					return;
 				}
+				cpe.style.display = 'block';
 				break;
 			case "fck":
+				
+				if (!fckLoaded){
+					if (fckLoading)
+						return;
+					fckLoading = true;
+					setMessage("Loading FCKEditor...");
+					
+					loadJSFile(
+						"##pageroot##/FCKEditor/fckeditor.js",
+						function(){
+							var div = document.getElementById("fck_container");
+							var fck = new FCKeditor("FCKeditor");
+							fck.BasePath = "##pageroot##/FCKeditor/";
+							fck.Height = "450";
+							div.innerHTML = fck.CreateHtml();
+							fckLoaded = true;
+						}
+					);
+					
+					return;
+				}
+				
 				fck.style.display = 'block';
-				cpe.style.display = 'none';
+				break;
+				
+			case "ea":
+			
+			
+				if (!eaLoaded){
+					if (eaLoading)
+						return;
+					eaLoading = true;
+					setMessage("Loading Editarea...");
+					
+					loadJSFile(
+						'##pageroot##/editarea/edit_area_compressor.php',
+						function(){
+							
+							document.getElementById("div_ea").style.display = "block";
+							editAreaLoader.window_loaded();
+							editAreaLoader.init({
+								id: "ea",
+								syntax: "<?php echo $ealang; ?>",
+								start_highlight: true,
+								toolbar: "save, |, fullscreen, |, search, go_to_line, |, undo, redo, |, select_font, |, change_smooth_selection, highlight, reset_highlight, |, help",
+								allow_toggle: false,
+								save_callback: "saveBegin",
+								EA_load_callback: "hideMessage"
+							});
+							sw_setCode('ea');
+							eaLoaded = true;
+						}
+					);
+					return;
+				}
+				
+				ea.style.display = 'block';
 				break;
 		}
 		
-		code = getCode();	
+		sw_setCode(newEditor);
+	}
+
+	// special function
+	function sw_setCode(newEditor){
+		var code = getCode();	
 		curEditor = newEditor;
 		setCode(code);
 	}
-
+	
+	
+	// loads an external javascript file
+	function loadJSFile(file,onload){
+		try {
+			var x = document.createElement("script");
+			
+			x.onload = onload;
+			x.called = false;
+			x.onreadystatechange = function(){
+				if (!x.called && (this.readyState == "complete" || this.readyState == "loaded")){
+					this.called = false;
+					this.onload();
+				}
+			};
+				
+			x.type = "text/javascript";
+			x.src = file;
+			document.getElementsByTagName("head")[0].appendChild(x);
+		} catch(e) {
+			alert(e);
+		}
+	}
+	
+	// called when FCKeditor is done starting..
+	function FCKeditor_OnComplete( editorInstance ){
+		editorInstance.LinkedField.form.onsubmit = saveBegin;
+		sw_setCode('fck');
+		hideMessage();
+		document.getElementById("div_fckedit").style.display = "block";
+	}
 	
 	// revert editor contents
 	function revert_text(){
@@ -663,45 +810,7 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 	}
 	
 	function ed_load(){
-<?php
-	// setup the editor
-	
-	// what language?
-	$lang = "html";
-	$ix = 1;
-	$info = pathinfo($url);
-	if (array_key_exists('extension',$info)){
-		switch($info['extension']){
-			case "php":
-			case "php4":
-			case "php5":
-			case "phtml":
-				$lang = "php";
-				$ix = 4;
-				break;
-			case "js":
-				$lang = "javascript";
-				$ix = 3;
-				break;
-			case "css":
-				$lang = "css";
-				$ix = 0;
-				break;
-			case "txt":
-				$lang = "text";
-				$ix = 5;
-				break;
-		}		
-	}
-	
-	// override setting if execute is set
-	if ($execute){
-		$lang = "php";
-		$ix = 4;
-	}
-	
-	echo "\t\tdocument.getElementById('editor_syntax').options[$ix].selected = true;\n";	
-?>
+		document.getElementById('editor_syntax').options[<?php echo $cp_idx; ?>].selected = true;
 	}
 
 	attachOnload(window,ed_load);
@@ -711,7 +820,14 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		window.addEventListener('keypress', saveHandler, true);
 	else
 		document.attachEvent('onkeydown', saveHandler);
-		
+
+	// TODO: Add support to detect whether a page is 'dirty' or not
+	window.onbeforeunload = page_unload;
+	function page_unload(){
+		var msg = "If you did not save your data, then it will be lost!"
+		return msg;
+	}		
+	
 	function saveHandler(e){
 		
 		if (!e) var e = window.event;
@@ -766,13 +882,19 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		execJS(document.getElementById('adm_edarea_save'));	// execute any script elements
 	}
 	
-	// called when FCKeditor is done starting..
-	function FCKeditor_OnComplete( editorInstance ){
-		editorInstance.LinkedField.form.onsubmit = saveBegin;
+	function setMessage(msg){
+		var s = document.getElementById('adm_edarea_save');
+		s.innerHTML = msg;
+		s.style.display = 'block';
+	}
+
+	function hideMessage(){
+		document.getElementById('adm_edarea_save').style.display = 'none';
 	}
 
 	function formSubmit(){
 		document.edurl_editor.edurl_content.value = getCode();
+		window.onbeforeunload = null;
 		document.edurl_editor.submit();
 	}
 
@@ -823,12 +945,13 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 &#35;&#35;menu&#35;&#35; - Page menu<br/>
 &#35;&#35;banner&#35;&#35; - Page banner
 </p>
-<p><strong>Warning</strong>: If you use the HTML editor to modify non-HTML content, then your text may become corrupted!</p>
+<p><strong>Warning</strong>: If you use the FCKEditor editor to modify non-HTML content, then your text may become corrupted!</p>
 <div id="adm_edarea_save"></div>
 <p>
 	<ul id="adm_list">
-		<li><a href="javascript:switchEditor('fck')">HTML View</a></li>
-		<li><a href="javascript:switchEditor('cp')">Code View</a></li>
+		<li><a href="javascript:switchEditor('fck')">FCKEditor (HTML)</a></li>
+		<li><a href="javascript:switchEditor('cp')">Codepress (Source)</a></li>
+		<li><a href="javascript:switchEditor('ea')">Editarea (Source)</a></li>
 	</ul>
 </p>
 <div id="adm_edarea_editor">
@@ -837,26 +960,25 @@ function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,
 		<select id="editor_syntax" onchange="switchLanguage()">
 			<option value="css">CSS</option>
 			<option value="html">HTML</option>
-			<option value="java">Java</option>
 			<option value="javascript">Javascript</option>
 			<option value="php">PHP</option>
 			<option value="text">Plain Text</option>
-		</select> <a href="javascript:cp.toggleAutoComplete()">Toggle Autocomplete</a></p>
+		</select> Toggle: <a href="javascript:cp.toggleAutoComplete()">Autocomplete</a> | <a href="javascript:cp.toggleEditor()">Highlighting</a></p>
 		<div id="cp_container"></div>
 		<br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
 	</div>
 
 	<div id="div_fckedit" style="display: none">
 		<form>
-		<script type="text/javascript">
-			var oFCKeditor = new FCKeditor('FCKeditor');
-			oFCKeditor.BasePath = "##pageroot##/FCKeditor/";
-			oFCKeditor.Height = "450";
-			oFCKeditor.Create();
-		</script>
+		<div id="fck_container"></div>
 		</form>
 		<br/><a href="javascript:revert_text();">Revert Current Changes</a>
 	</div>
+	
+	<div id="div_ea" style="display: none">
+		<div id="ea_container"><textarea id="ea"></textarea></div>
+	</div>
+	
 </div>
 <p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
 

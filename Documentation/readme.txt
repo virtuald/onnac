@@ -40,9 +40,8 @@ Contents
 ----------------
 
 Onnac (Oh No! Not Another CMS) is a simplistic advanced Content Management 
-System (CMS) designed for those who hand code their HTML/etc. Onnac is designed 
-generically to help the advanced developer implement websites and applications 
-in a (relatively) easy to manage manner.
+System (CMS). Onnac is designed generically to help the advanced developer 
+implement websites and applications in a (relatively) easy to manage manner.
 
 Of course, at the moment the primary goal of Onnac is to allow me to easily 
 manage the websites I administer, so expect development to occur in step with 
@@ -55,16 +54,27 @@ theres plenty of them out there.
 As of right now, there is little documentation for this software. That will
 eventually change, probably. 
 
-The administrative software uses the Codepress javascript syntax highlighter
-and editor. It is released under an LGPL license, and you may find out more
-information about this package at http://codepress.net/ It also uses
-the FCKeditor for a WYSIWYG editing interface. It is also released under an
-LGPL license, and you may obtain more information about it at 
-http://www.fckeditor.net
+The administrative interface uses the following editor components to edit 
+pages:
 
-This software is currently ALPHA software, and has not been extensively tested
-in environments that I do not use! I do use it in production websites, but use
-it at your own risk in any environment. 
+	FCKEditor: This is a WYSIWYG editor that works very well if you want to 
+	insert simple HTML into a page. It will reformat your code and change 
+	things it doesn't like, so beware! However, it works very well most of 
+	the time. I've found that it will eat some PHP scripts, so avoid using 
+	it to edit those! http://www.fckeditor.net
+	
+	CodePress: Codepress is a syntax highlighter written in Javascript. It
+	is extremely lightweight, and works very well in firefox. Does not
+	support autoindent or tabbing. http://www.codepress.org
+	
+	Editarea: Another syntax highlighting editor written in Javascript,
+	it supports a number of features that codepress does not, such as
+	autoindent, tabbing, fullscreen, and resizable text. 
+	http://www.cdolivet.net/editarea/
+	
+
+I have used this software in a number of environments, and it works very well 
+for me. However, use at your own risk. 
 
 2. Installation
 ----------------

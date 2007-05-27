@@ -21,7 +21,7 @@ Certain things may break under certain versions of these software packages. If
 we find out more, we'll mention it here in future releases.
 
 The administrative interface requires Firefox 1.5+ or Internet Explorer 5.5+, with
-javascript and cookies enabled. 
+javascript and cookies enabled. It will work best with Firefox 2.x. 
 
 	
 2. New Installs
@@ -97,18 +97,16 @@ Generally, look at the changelog for details. We will try to mention any relevan
 changes there, or in this document.
 
 
-4. Updating the Codepress or FCKeditor editing tools
+4. Updating the editing tools
 -----------------------------------------------------
 
-In general, we will try to keep these two tools up to date with current releases of
-them. However, if you want to upgrade yourself because you're having issues, in 
-general you can copy the distribution files over their respective directories at
-/interface. 
+In general, we will try to keep these tools updated. We have made modifications to
+some of the default configurations, so a direct upgrade may not work. Good luck.
 
-FCKEditor is trickier than Codepress to upgrade. Look at the directory structure 
-inside of /interface, and find the parts that match... and it should probably work. 
 
 5. Uninstall
 -------------
 
-Delete all the files, and delete the database.
+Delete all the files, and delete the database. You can use the 'Export HTML' 
+option to retain a complete compiled copy of your website. The compiled copy 
+will probably need some tweaking to be properly deployed, however.
