@@ -561,430 +561,9 @@ function edurl_show_add_to_dir($d_tree,$type){
 */
 function edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,$content){
 
-	global $cfg;
+	require './include/admin/editor.inc.php';
+	editor_render('edurl',$url,$title,$execute,$bannerID,$templateID,$menuID,$content);
 	
-	// what language should we set?
-	$cplang = $ealang = "html";
-	$cp_idx = 1;
-	$info = pathinfo($url);
-	if (array_key_exists('extension',$info)){
-		switch($info['extension']){
-			case "php":
-			case "php4":
-			case "php5":
-			case "phtml":
-				$ealang = "php";
-				$cp_idx = 3;
-				break;
-			case "js":
-				$ealang = "js";
-				$cp_idx = 2;
-				break;
-			case "css":
-				$ealang = "css";
-				$cp_idx = 0;
-				break;
-			case "txt":
-				$ealang = '';
-				$cp_idx = 4;
-				break;
-		}		
-	}
-	
-	// override setting if execute is set
-	if ($execute){
-		$ealang = "php";
-		$cp_idx = 3;
-	}
-	
-?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
-<script type="text/javascript" src="##pageroot##/tw-sack.js"></script>
-<script type="text/javascript"><!--
-
-	var curEditor = '';
-	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
-
-	var cpLoaded = false, fckLoaded = false, eaLoaded = false;
-	var cpLoading = false, fckLoading = false, eaLoading = false;
-	var ajax = new sack();
-
-	function getCode() {
-		switch (curEditor){
-			case "fck":
-				if (fckLoaded)
-					return FCKeditorAPI.GetInstance('FCKeditor').GetXHTML(true);
-				break;
-				
-			case "cp":
-				if (cpLoaded)
-					return cp.getCode();
-				break;
-			
-			case "ea":
-				if (eaLoaded)
-					return editAreaLoader.getValue('ea');
-				break; 
-				
-			default:
-				return initialCode;
-		}
-	}
-	
-	function setCode(text) {
-		
-		var oElement = document.getElementById('editor_syntax');
-		
-		switch (curEditor){
-			case "fck":
-				FCKeditorAPI.GetInstance('FCKeditor').SetHTML(text);
-				break;
-				
-			case "cp":
-				var lang = oElement.options[oElement.selectedIndex].value;
-				cp.setCode(text,lang);
-				break;
-				
-			case "ea":
-				editAreaLoader.setValue('ea',text);
-				editAreaLoader.execCommand('resync_highlight');
-				break;
-		}
-	}
-	
-	function switchLanguage(){
-		setCode(getCode());
-	}
-	
-	function switchEditor(newEditor){
-		
-		if (newEditor == curEditor || newEditor == "")
-			return;
-		
-		var cpe = document.getElementById("div_codepress");
-		var fck = document.getElementById("div_fckedit");
-		var ea = document.getElementById("div_ea");
-		
-		cpe.style.display = 'none';
-		fck.style.display = 'none';
-		ea.style.display = 'none';
-		
-		var oElement = document.getElementById('editor_syntax');
-		
-		switch (newEditor){
-			case "cp":
-			
-				if (!cpLoaded){
-					if (cpLoading)
-						return;
-				
-					cpLoading = true;
-					setMessage("Loading codepress...");
-				
-					// load the javascript file dynamically
-					loadJSFile(
-						"##pageroot##/codepress/codepress.js",
-						function(){
-							
-							document.getElementById("div_codepress").style.display = "block";
-							document.getElementById('cp_container').innerHTML = '<text' + 'area id="cp" class="codepress autocomplete-off ' + oElement.options[oElement.selectedIndex].value + '"></text' + 'area>';
-							
-							document.getElementById('cp').value = getCode();
-							curEditor = 'cp';
-							
-							CodePress.run();
-							cpLoaded = true;
-							cp.setSaveHandler(saveBegin);
-							hideMessage();
-						}
-					);
-					return;
-				}
-				cpe.style.display = 'block';
-				break;
-			case "fck":
-				
-				if (!fckLoaded){
-					if (fckLoading)
-						return;
-					fckLoading = true;
-					setMessage("Loading FCKEditor...");
-					
-					loadJSFile(
-						"##pageroot##/FCKEditor/fckeditor.js",
-						function(){
-							var div = document.getElementById("fck_container");
-							var fck = new FCKeditor("FCKeditor");
-							fck.BasePath = "##pageroot##/FCKeditor/";
-							fck.Height = "450";
-							div.innerHTML = fck.CreateHtml();
-							fckLoaded = true;
-						}
-					);
-					
-					return;
-				}
-				
-				fck.style.display = 'block';
-				break;
-				
-			case "ea":
-			
-			
-				if (!eaLoaded){
-					if (eaLoading)
-						return;
-					eaLoading = true;
-					setMessage("Loading Editarea...");
-					
-					loadJSFile(
-						'##pageroot##/editarea/edit_area_compressor.php',
-						function(){
-							
-							document.getElementById("div_ea").style.display = "block";
-							editAreaLoader.window_loaded();
-							editAreaLoader.init({
-								id: "ea",
-								syntax: "<?php echo $ealang; ?>",
-								start_highlight: true,
-								toolbar: "save, |, fullscreen, |, search, go_to_line, |, undo, redo, |, select_font, |, change_smooth_selection, highlight, reset_highlight, |, help",
-								allow_toggle: false,
-								save_callback: "saveBegin",
-								EA_load_callback: "hideMessage"
-							});
-							sw_setCode('ea');
-							eaLoaded = true;
-						}
-					);
-					return;
-				}
-				
-				ea.style.display = 'block';
-				break;
-		}
-		
-		sw_setCode(newEditor);
-	}
-
-	// special function
-	function sw_setCode(newEditor){
-		var code = getCode();	
-		curEditor = newEditor;
-		setCode(code);
-	}
-	
-	
-	// loads an external javascript file
-	function loadJSFile(file,onload){
-		try {
-			var x = document.createElement("script");
-			
-			x.onload = onload;
-			x.called = false;
-			x.onreadystatechange = function(){
-				if (!x.called && (this.readyState == "complete" || this.readyState == "loaded")){
-					this.called = false;
-					this.onload();
-				}
-			};
-				
-			x.type = "text/javascript";
-			x.src = file;
-			document.getElementsByTagName("head")[0].appendChild(x);
-		} catch(e) {
-			alert(e);
-		}
-	}
-	
-	// called when FCKeditor is done starting..
-	function FCKeditor_OnComplete( editorInstance ){
-		editorInstance.LinkedField.form.onsubmit = saveBegin;
-		sw_setCode('fck');
-		hideMessage();
-		document.getElementById("div_fckedit").style.display = "block";
-	}
-	
-	// revert editor contents
-	function revert_text(){
-		if (window.confirm("Revert to the original contents?"))
-			setCode(initialPureCode);
-	}
-	
-	function ed_load(){
-		document.getElementById('editor_syntax').options[<?php echo $cp_idx; ?>].selected = true;
-	}
-
-	attachOnload(window,ed_load);
-	
-	// keystroke stuff
-	if (window.addEventListener)
-		window.addEventListener('keypress', saveHandler, true);
-	else
-		document.attachEvent('onkeydown', saveHandler);
-
-	// TODO: Add support to detect whether a page is 'dirty' or not
-	window.onbeforeunload = page_unload;
-	function page_unload(){
-		var msg = "If you did not save your data, then it will be lost!"
-		return msg;
-	}		
-	
-	function saveHandler(e){
-		
-		if (!e) var e = window.event;
-		
-		// catch CTRL-S
-		if((e.charCode !== undefined ? e.charCode == 115 : e.keyCode == 83) && e.ctrlKey) {
-			
-			saveBegin();
-			if (e.preventDefault)
-				e.preventDefault();
-			else
-				e.returnValue = false;
-		}
-		
-	}
-	
-	var saving = false;
-	
-	// called on save
-	function saveBegin(){
-		if (saving)
-			return false;
-	
-		saving = true;
-	
-		var edArea = document.getElementById('adm_edarea_save');
-		edArea.innerHTML = 'Saving...';
-		edArea.style.display = 'block';
-		
-		var oElement = document.forms['edurl_editor'];
-		
-		// set all the appropriate variables
-		ajax.setVar('edurl_content',getCode());
-		ajax.setVar('edurl_template',oElement.edurl_template[oElement.edurl_template.selectedIndex].value);
-		ajax.setVar('edurl_banner',oElement.edurl_banner[oElement.edurl_banner.selectedIndex].value);
-		ajax.setVar('edurl_menu',oElement.edurl_menu[oElement.edurl_menu.selectedIndex].value);
-		ajax.setVar('edurl_title',oElement.edurl_title.value);
-		ajax.setVar('edurl_execute',oElement.edurl_execute[oElement.edurl_execute.selectedIndex].value);
-		ajax.setVar('edurl_url','<?php echo htmlentities($url);?>');
-		
-		ajax.requestFile = "##pageroot##/?mode=edurl&page_url=<?php echo htmlentities($url);?>&ed_action=change&ajax=true";
-		ajax.method = 'POST';
-		ajax.element = 'adm_edarea_save';
-		ajax.onCompletion = saveComplete;
-		ajax.runAJAX();
-		
-		return false;
-	}
-	
-	function saveComplete(){
-		saving = false;
-		execJS(document.getElementById('adm_edarea_save'));	// execute any script elements
-	}
-	
-	function setMessage(msg){
-		var s = document.getElementById('adm_edarea_save');
-		s.innerHTML = msg;
-		s.style.display = 'block';
-	}
-
-	function hideMessage(){
-		document.getElementById('adm_edarea_save').style.display = 'none';
-	}
-
-	function formSubmit(){
-		document.edurl_editor.edurl_content.value = getCode();
-		window.onbeforeunload = null;
-		document.edurl_editor.submit();
-	}
-
-	// TODO: Get rid of this or fix it, its pretty useless as is.. 
-	function previewWindow(type,groupid){
-		window.open("##pageroot##/?mode=preview&type=" + type + "&group=" + groupid ,"AdminPreview","");
-	}
-	
-//--></script>
-<form name="edurl_editor" action="##pageroot##/?mode=edurl&amp;page_url=<?php echo htmlentities($url);?>&amp;ed_action=change" method="post">
-
-<table>
-	<tr><td>URL</td><td><input type="text" name="edurl_url" size="40" value="<?php echo htmlentities($url); ?>"/></td>
-	
-	<td>Template</td><td><?php 
-
-	$query = "SELECT template_id,template_name FROM $cfg[t_templates] ORDER BY template_name ASC";
-	generate_select_option('edurl_template',$templateID,$query,true); 
-
-	?></td></tr>
-	<tr><td>Page Title</td><td><input type="text" name="edurl_title" size="40" value="<?php echo htmlentities($title,ENT_NOQUOTES);?>"/></td>
-	
-	<td>Banner Group</td><td><?php
-
-	$query = "SELECT banner_id,name FROM $cfg[t_banners] ORDER BY name ASC";
-	generate_select_option('edurl_banner',$bannerID,$query,true);
-
-?>&nbsp;<a href="javascript:previewWindow('banner',document.edurl_editor.edurl_banner.value)">Show</a></td></tr>
-
-	<tr><td>Execute PHP Code</td><td><select name="edurl_execute"><option value="yes" <?php if ($execute) echo "selected";?>>Yes</option><option value="no" <?php if (!$execute) echo "selected";?>>No</option></select></td>
-	
-	<td>Menu ID</td><td><?php
-
-	$query = "SELECT menu_id,name FROM $cfg[t_menus] ORDER BY name ASC";
-	generate_select_option('edurl_menu',$menuID,$query,true);
-	
-?>
-	</td></tr>
-</table>
-<input type="hidden" value="" name="edurl_content"/>
-</form>
-
-<h5>Page content:</h5>
-<p><em>Special strings:</em><br/>
-&#35;&#35;pageroot&#35;&#35; - Root directory of current page (No trailing /)<br/>
-&#35;&#35;rootdir&#35;&#35; - Root directory of website (No trailing /)<br/>
-&#35;&#35;title&#35;&#35; - Title of page<br/>
-&#35;&#35;menu&#35;&#35; - Page menu<br/>
-&#35;&#35;banner&#35;&#35; - Page banner
-</p>
-<p><strong>Warning</strong>: If you use the FCKEditor editor to modify non-HTML content, then your text may become corrupted!</p>
-<div id="adm_edarea_save"></div>
-<p>
-	<ul id="adm_list">
-		<li><a href="javascript:switchEditor('fck')">FCKEditor (HTML)</a></li>
-		<li><a href="javascript:switchEditor('cp')">Codepress (Source)</a></li>
-		<li><a href="javascript:switchEditor('ea')">Editarea (Source)</a></li>
-	</ul>
-</p>
-<div id="adm_edarea_editor">
-	<div id="div_codepress" style="display: none">
-		<p>Highlighting type:
-		<select id="editor_syntax" onchange="switchLanguage()">
-			<option value="css">CSS</option>
-			<option value="html">HTML</option>
-			<option value="javascript">Javascript</option>
-			<option value="php">PHP</option>
-			<option value="text">Plain Text</option>
-		</select> Toggle: <a href="javascript:cp.toggleAutoComplete()">Autocomplete</a> | <a href="javascript:cp.toggleEditor()">Highlighting</a></p>
-		<div id="cp_container"></div>
-		<br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
-	</div>
-
-	<div id="div_fckedit" style="display: none">
-		<form>
-		<div id="fck_container"></div>
-		</form>
-		<br/><a href="javascript:revert_text();">Revert Current Changes</a>
-	</div>
-	
-	<div id="div_ea" style="display: none">
-		<div id="ea_container"><textarea id="ea"></textarea></div>
-	</div>
-	
-</div>
-<p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
-
-<input type="button" value="Change content" onclick="formSubmit()">
-<?php	
-
 }
 
 // validates and adds data to database
@@ -998,23 +577,23 @@ function edurl_add_data($url,$be_verbose){
 	
 	// fail on any error -- the only reason one of these wouldn't be passed, is if you were
 	// screwing with the input. 
-	if (!isset($_POST['edurl_content'])){
+	if (!isset($_POST['editor_content'])){
 		onnac_error( "Error in content!");
 		return 1;
 	}else{
 	
 		// question: to unescape chars or not? 
-		//$content = db_escape_string(html_entity_decode($_POST['edurl_content'],ENT_NOQUOTES));
-		$content = db_escape_string($_POST['edurl_content']);
+		//$content = db_escape_string(html_entity_decode($_POST['editor_content'],ENT_NOQUOTES));
+		$content = db_escape_string($_POST['editor_content']);
 	}
 	
 	// new url
-	if (!isset($_POST['edurl_url'])){
+	if (!isset($_POST['editor_url'])){
 		onnac_error("No URL specified!");
 		return 1;
 	}else{
-		$h_new_url = htmlentities($_POST['edurl_url']);
-		$new_url = db_escape_string($_POST['edurl_url']);
+		$h_new_url = htmlentities($_POST['editor_url']);
+		$new_url = db_escape_string($_POST['editor_url']);
 		
 		if ($new_url == ""){
 			onnac_error("Empty URL specified!");
@@ -1035,18 +614,18 @@ function edurl_add_data($url,$be_verbose){
 		}
 	}
 	
-	if (!isset($_POST['edurl_title'])){
+	if (!isset($_POST['editor_title'])){
 		onnac_error("Error in title!");
 		return 1;
 	}else{
-		$title = db_escape_string($_POST['edurl_title']);
+		$title = db_escape_string($_POST['editor_title']);
 	}
 	
-	if (!isset($_POST['edurl_execute'])){
+	if (!isset($_POST['editor_execute'])){
 		onnac_error("Error in parameter 'execute'!");
 		return 1;
 	}else{
-		$execute = db_escape_string($_POST['edurl_execute']);
+		$execute = db_escape_string($_POST['editor_execute']);
 	}
 	
 	if ($execute == "yes"){
@@ -1058,11 +637,11 @@ function edurl_add_data($url,$be_verbose){
 		return 1;
 	}
 		
-	if (!isset($_POST['edurl_template'])){
+	if (!isset($_POST['editor_template'])){
 		onnac_error("Error in parameter 'template!'");
 		return 1;
 	}else{
-		$templateID = db_escape_string($_POST['edurl_template']);
+		$templateID = db_escape_string($_POST['editor_template']);
 	}
 	
 	if ($templateID[0] == '-'){
@@ -1075,11 +654,11 @@ function edurl_add_data($url,$be_verbose){
 		return 1;
 	}
 		
-	if (!isset($_POST['edurl_banner'])){
+	if (!isset($_POST['editor_banner'])){
 		onnac_error("Error in parameter 'banner'!");
 		return 1;
 	}else{
-		$bannerID = db_escape_string($_POST['edurl_banner']);
+		$bannerID = db_escape_string($_POST['editor_banner']);
 	}
 	
 	if ($bannerID[0] == '-'){
@@ -1092,11 +671,11 @@ function edurl_add_data($url,$be_verbose){
 		return 1;
 	}
 		
-	if (!isset($_POST['edurl_menu'])){
+	if (!isset($_POST['editor_menu'])){
 		onnac_error("Error in menu");
 		return 1;
 	}else{
-		$menuID = db_escape_string($_POST['edurl_menu']);
+		$menuID = db_escape_string($_POST['editor_menu']);
 	}
 	
 	if ($menuID[0] == '-'){
@@ -1122,7 +701,7 @@ function edurl_add_data($url,$be_verbose){
 			if (!db_is_valid_result($result)){
 				onnac_error("Error adding information to database for $h_url!!!");
 				if ($be_verbose)
-					edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
+					edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,$_POST['editor_content']);
 				return 1;
 			}
 			
@@ -1139,7 +718,7 @@ function edurl_add_data($url,$be_verbose){
 	
 	// invalid result
 	if ($be_verbose)
-		edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,stripcslashes($content));
+		edurl_render_editor($url,$title,$execute,$bannerID,$templateID,$menuID,$_POST['editor_content']);
 	return 1;
 }
 

@@ -185,141 +185,9 @@ function edtemplate($error = "no"){
 
 */
 function edtemplate_render_editor($template_id,$template_name,$content){
-
-	global $cfg;
 	
-?><noscript>This editor does NOT work without javascript enabled! Sorry.</noscript>
-<script type="text/javascript" src="##pageroot##/codepress/codepress.js"></script>
-<script type="text/javascript" src="##pageroot##/tw-sack.js"></script>
-<script type="text/javascript"><!--
-	/*
-		Codepress functions
-	*/
-	var curEditor = '';
-	var initialCode = unescape("<?php echo rawurlencode(htmlentities($content)); ?>");
-	var ajax = new sack();
-	
-	function getCode() {
-		return cp.getCode();
-	}
-	
-	function setCode(text) {
-		var oElement = document.getElementById('editor_syntax');
-		var lang = oElement.options[oElement.selectedIndex].value;
-		cp.setCode(text,lang);
-	}
-	
-	function switchLanguage(){
-		setCode(getCode());
-	}
-	
-	// revert editor contents
-	function revert_text(){
-		if (window.confirm("Revert to the original contents?"))
-			setCode(initialCode);
-	}
-	
-	function ed_load(){
-	
-		var cpi = document.getElementById('cp_container');
-		cpi.innerHTML = '<text' + 'area id="cp" class="codepress autocomplete-off html">' + initialCode + '</text' + 'area>';
-		CodePress.run();
-		cp.setSaveHandler(saveBegin);
-		document.getElementById('editor_syntax').options[1].selected = true;
-	}
-
-	attachOnload(window,ed_load);
-	
-	// keystroke stuff
-	if (window.addEventListener)
-		window.addEventListener('keypress', saveHandler, true);
-	else
-		document.attachEvent('onkeydown', saveHandler);
-		
-	function saveHandler(e){
-		
-		if (!e) var e = window.event;
-		
-		// catch CTRL-S
-		if((e.charCode !== undefined ? e.charCode == 115 : e.keyCode == 83) && e.ctrlKey) {
-			
-			saveBegin();
-			if (e.preventDefault)
-				e.preventDefault();
-			else
-				e.returnValue = false;
-		}
-	}
-	
-	var saving = false;
-	
-	// called on save
-	function saveBegin(){
-		if (saving)
-			return false;
-	
-		saving = true;
-	
-		var edArea = document.getElementById('adm_edarea_save');
-		edArea.innerHTML = 'Saving...';
-		edArea.style.display = 'block';
-		
-		var oElement = document.forms['edtemplate_editor'];
-		
-		// set all the appropriate variables
-		ajax.setVar('edtemplate_content',getCode());
-		ajax.setVar('edtemplate_name',oElement.edtemplate_name.value);
-		
-		ajax.requestFile = "##pageroot##/?mode=edtemplate&template_id=<?php echo htmlentities($template_id);?>&ed_action=change&ajax=true";
-		ajax.method = 'POST';
-		ajax.element = 'adm_edarea_save';
-		ajax.onCompletion = saveComplete;
-		ajax.runAJAX();
-		
-		return false;
-	}
-	
-	function saveComplete(){
-		saving = false;
-		execJS(document.getElementById('adm_edarea_save'));	// execute any script elements
-	}
-
-	function formSubmit(){
-		document.edtemplate_editor.edtemplate_content.value = getCode();
-		document.edtemplate_editor.submit();
-	}
-	
-//--></script>
-
-<form name="edtemplate_editor" action="##pageroot##/?mode=edtemplate&amp;template_id=<?php echo htmlentities($template_id);?>&amp;ed_action=change" method="post" onsubmit="formSubmit()">
-	Template Name <input type="text" name="edtemplate_name" size="50" value="<?php echo htmlentities($template_name); ?>"/>
-	<input type="hidden" value="" name="edtemplate_content"/>
-</form>
-
-<p>Template content:</p>
-<p><em>Special strings:</em><br/>
-&#35;&#35;content&#35;&#35; - Content of page -- MUST be included somewhere!!<br/>
-&#35;&#35;pageroot&#35;&#35; - Root directory of current page (No trailing /)<br/>
-&#35;&#35;rootdir&#35;&#35; - Root directory of website (No trailing /)<br/>
-&#35;&#35;title&#35;&#35; - Title of page<br/>
-&#35;&#35;menu&#35;&#35; - Page menu<br/>
-&#35;&#35;banner&#35;&#35; - Page banner</p>
-<p>Highlighting type:
-<select id="editor_syntax" onchange="switchLanguage()">
-	<option value="css">CSS</option>
-	<option value="html">HTML</option>
-	<option value="java">Java</option>
-	<option value="javascript">Javascript</option>
-	<option value="php">PHP</option>
-	<option value="text">Plain Text</option>
-</select> <a href="javascript:cp.toggleAutoComplete()">Toggle Autocomplete</a></p>
-<div id="adm_edarea_save"></div>
-<div id="cp_container"></div>
-<br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
-<p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
-<input type="button" value="Change content" onclick="formSubmit()">
-<?php	
-
+	require './include/admin/editor.inc.php';
+	editor_render('edtemplate',$template_id,$template_name,null,null,null,null,$content);
 }
 
 // validates and adds data to database
@@ -332,24 +200,24 @@ function edtemplate_add_data($template_id,$be_verbose){
 	
 	// fail on any error -- the only reason one of these wouldn't be passed, is if you were
 	// screwing with the input. 
-	if (!isset($_POST['edtemplate_content'])){
+	if (!isset($_POST['editor_content'])){
 		onnac_error("No content received!");
 		return 1;
 	}else{
-		if (strstr( $_POST['edtemplate_content'], "##content##" ) === FALSE){
+		if (strstr( $_POST['editor_content'], "##content##" ) === FALSE){
 			onnac_error("No &quot;&#35;&#35;content&#35;&#35;&quot; found in template!");
 			return 1;
 		}
 
-		$content = db_escape_string($_POST['edtemplate_content']);
+		$content = db_escape_string($_POST['editor_content']);
 	}
 	
-	if (!isset($_POST['edtemplate_name'])){
+	if (!isset($_POST['editor_title'])){
 		onnac_error("Error in template name!");
 		return 1;
 	}else{
-		$template_name = db_escape_string($_POST['edtemplate_name']);
-		$h_template_name = htmlentities($_POST['edtemplate_name']);
+		$template_name = db_escape_string($_POST['editor_title']);
+		$h_template_name = htmlentities($_POST['editor_title']);
 	}
 	
 	
@@ -361,7 +229,7 @@ function edtemplate_add_data($template_id,$be_verbose){
 			onnac_error("Error adding information to database for $h_template_name!!!");
 			
 			if ($be_verbose)
-				edtemplate_render_editor($template_id,$template_name,$template);
+				edtemplate_render_editor($template_id,$template_name,$_POST['editor_content']);
 			return 1;
 		}
 	
@@ -372,7 +240,7 @@ function edtemplate_add_data($template_id,$be_verbose){
 		if (!db_is_valid_result($result) || db_affected_rows($result) != 1){
 			onnac_error("Update failed!");
 			if ($be_verbose)
-				edtemplate_render_editor($template_id,$template_name,$template);
+				edtemplate_render_editor($template_id,$template_name,$_POST['editor_content']);
 			return 1;	
 		}
 		
