@@ -199,7 +199,7 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 					setMessage("Loading FCKEditor...");
 					
 					loadJSFile(
-						"##pageroot##/FCKEditor/fckeditor.js",
+						"##pageroot##/FCKeditor/fckeditor.js",
 						function(){
 							var div = document.getElementById("fck_container");
 							var fck = new FCKeditor("FCKeditor");
