@@ -31,9 +31,10 @@ Contents
 
 	1. Introduction
 	2. Installation
-	3. Programming API
-	4. How to contribute
-	5. Contributors
+	3. Configuration
+	4. Programming API
+	5. How to contribute
+	6. Contributors
 	
 
 1. Introduction
@@ -81,14 +82,23 @@ for me. However, use at your own risk.
 
 For installation, see install.txt. 
 
+3. Configuration
+-----------------
 
-3. Programming API
+The file ./include/default.inc.php contains the default settings for many of
+the configurable aspects of Onnac. Each item (except where noted) should
+be copied into ./include/config.inc.php if you need to change it. 
+
+
+4. Programming API
 -------------------
 
-For API notes, refer to api.txt
+For API notes, refer to api.txt. At this time, the API is not guaranteed to 
+be stable. However, it has been the same for awhile, so it probably
+will continue to be unless noted.
 
 
-4. How to contribute
+5. How to contribute
 ---------------------
 
 If Onnac doesn't do something that you think it should be able to do, or
@@ -99,7 +109,7 @@ meaning to implement, I've just never gotten around to doing it. See todo.txt
 	Dustin Spicuzza (dustin@virtualroadside.com)
 
 
-5. Contributors
+6. Contributors
 ----------------
 
 Thanks to the many :p contributors for helping out with Onnac!

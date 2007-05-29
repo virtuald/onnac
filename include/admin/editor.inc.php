@@ -92,6 +92,7 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 
 	var curEditor = '';
 	var initialCode = unescape("<?php echo rawurlencode($content); ?>");
+	var lastSavedCode = initialCode;
 
 	var cpLoaded = false, fckLoaded = false, eaLoaded = false;
 	var cpLoading = false, fckLoading = false, eaLoading = false;
@@ -226,11 +227,22 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 					setMessage("Loading Editarea...");
 					
 					loadJSFile(
-						'##pageroot##/editarea/edit_area_compressor.php',
+						<?php 
+						if ($cfg['editarea_compress'])
+							echo '"##pageroot##/editarea/edit_area_compressor.php"';
+						else
+							echo '"##pageroot##/editarea/edit_area_loader.js"';
+					?>,
 						function(){
 							
+							try{
+								editAreaLoader.window_loaded();
+							}catch(e){
+								setMessage("Editarea could not be loaded! You should try to set $cfg['editarea_compress'] to false in config.inc.php!");
+								return;
+							}
+							
 							document.getElementById("div_ea").style.display = "block";
-							editAreaLoader.window_loaded();
 							editAreaLoader.init({
 								id: "ea",
 								syntax: "<?php echo $ealang; ?>",
@@ -293,9 +305,16 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 	}
 	
 	// revert editor contents
-	function revert_text(){
-		if (window.confirm("Revert to the original contents?"))
-			setCode(initialPureCode);
+	function revert_text(revert_changes_since_open){
+		if (revert_changes_since_open){
+			if (window.confirm("Revert to the original contents?")){
+				setCode(initialCode);
+			}
+		}else{
+			if (window.confirm("Revert to last saved contents?")){
+				setCode(lastSavedCode);
+			}
+		}
 	}
 	
 	function ed_load(){
@@ -310,11 +329,12 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 	else
 		document.attachEvent('onkeydown', saveHandler);
 
-	// TODO: Add support to detect whether a page is 'dirty' or not
 	window.onbeforeunload = page_unload;
 	function page_unload(){
-		var msg = "If you did not save your data, then it will be lost!"
-		return msg;
+		if (getCode() != lastSavedCode){
+			var msg = "If you did not save your data, then it will be lost!"
+			return msg;
+		}
 	}		
 	
 	function saveHandler(e){
@@ -345,18 +365,19 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 		var edArea = document.getElementById('adm_edarea_msg');
 		edArea.innerHTML = 'Saving...';
 		edArea.style.display = 'block';
+		lastSavedCode = getCode();
 		
 		var oElement = document.forms['editor'];
 <?php if ($type == 'edtemplate'){ ?>
 		// set all the appropriate variables
-		ajax.setVar('editor_content',getCode());
+		ajax.setVar('editor_content',lastSavedCode);
 		ajax.setVar('editor_title',oElement.editor_title.value);
 		
 		ajax.requestFile = "##pageroot##/?mode=edtemplate&template_id=<?php echo htmlentities($unique_id);?>&ed_action=change&ajax=true";
 
 <?php }else{ ?>
 		// set all the appropriate variables
-		ajax.setVar('editor_content',getCode());
+		ajax.setVar('editor_content',lastSavedCode);
 		ajax.setVar('editor_template',oElement.editor_template[oElement.editor_template.selectedIndex].value);
 		ajax.setVar('editor_banner',oElement.editor_banner[oElement.editor_banner.selectedIndex].value);
 		ajax.setVar('editor_menu',oElement.editor_menu[oElement.editor_menu.selectedIndex].value);
@@ -420,7 +441,7 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 	$query = "SELECT banner_id,name FROM $cfg[t_banners] ORDER BY name ASC";
 	generate_select_option('editor_banner',$bannerID,$query,true);
 
-?>&nbsp;<a href="javascript:previewWindow('banner',document.editor.editor_banner.value)">Show</a></td></tr>
+?>&nbsp;<a href="" onclick="previewWindow('banner',document.editor.editor_banner.value); return false">Show</a></td></tr>
 
 	<tr><td>Execute PHP Code</td><td><select name="editor_execute"><option value="yes" <?php if ($execute) echo "selected";?>>Yes</option><option value="no" <?php if (!$execute) echo "selected";?>>No</option></select></td>
 	
@@ -458,11 +479,11 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 	<ul id="adm_list">
 		<?php 
 		if ($type != 'edtemplate'){
-			echo '<li><a href="javascript:switchEditor(\'fck\')">FCKEditor (HTML)</a></li>';
+			echo '<li><a href="" onclick="switchEditor(\'fck\');return false">FCKEditor (HTML)</a></li>';
 		}
 		?>
-		<li><a href="javascript:switchEditor('cp')">Codepress (Source)</a></li>
-		<li><a href="javascript:switchEditor('ea')">Editarea (Source)</a></li>
+		<li><a href="" onclick="switchEditor('cp');return false;">Codepress (Source)</a></li>
+		<li><a href="" onclick="switchEditor('ea');return false;">Editarea (Source)</a></li>
 	</ul>
 </p>
 <div id="adm_edarea_editor">
@@ -473,7 +494,7 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 		<form>
 		<div id="fck_container"></div>
 		</form>
-		<br/><a href="javascript:revert_text();">Revert Current Changes</a>
+		<br/>Revert: <a href="" onclick="revert_text(true);return false;">Changes Since Open</a> | <a href="" onclick="revert_text(false);return false;">Changes since last save</a>
 	</div>
 <?php }?>
 
@@ -485,14 +506,14 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 			<option value="javascript">Javascript</option>
 			<option value="php">PHP</option>
 			<option value="text">Plain Text</option>
-		</select> Toggle: <a href="javascript:cp.toggleAutoComplete()">Autocomplete</a> | <a href="javascript:cp.toggleEditor()">Highlighting</a></p>
+		</select> Toggle: <a href="" onclick="cp.toggleAutoComplete();return false;">Autocomplete</a> | <a href="" onclick="cp.toggleEditor();return false;">Highlighting</a></p>
 		<div id="cp_container"></div>
-		<br/><a href="javascript:revert_text();">Revert Current Changes</a></p>
+		<br/>Revert: <a href="" onclick="revert_text(true);return false;">Changes Since Open</a> | <a href="" onclick="revert_text(false);return false;">Changes since last save</a>
 	</div>
 	
 	<div id="div_ea" style="display: none">
 		<div id="ea_container"><textarea id="ea"></textarea></div>
-		<br/><a href="javascript:revert_text();">Revert Current Changes</a>
+		<br/>Revert: <a href="" onclick="revert_text(true);return false;">Changes Since Open</a> | <a href="" onclick="revert_text(false);return false;">Changes since last save</a>
 	</div>
 	
 </div>

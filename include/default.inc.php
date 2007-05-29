@@ -35,23 +35,6 @@
 global $cfg;
 $cfg = array(); 
 
-// ************************************************************************
-// do NOT copy these into config.inc.php
-// ************************************************************************
-
-// I'll definitely forget to increment this... 
-$cfg['onnac_version']		 	= "0.0.9.4";
-// turn replacements off, until needed -- this is set to true right before the
-// current webpage is evaluated. If you need to disable output_replace in your page,
-// you MUST do it in the page itself, not in the conf file
-$cfg['output_replace'] = false;
-
-// ************************************************************************
-// items below this line may be COPIED into config.inc.php, to change the 
-// default configuration
-// ************************************************************************
-
-
 $cfg['enable_transactions'] 	= 1;		// enable SQL transactions
 
 // If 1, this tells the cache validation script to hash the mtimes of all 'base' scripts, to see if they have
@@ -63,10 +46,35 @@ $cfg['login_expires']			= 1800;		// time (in seconds) logins expire
 $cfg['use_ssl']					= false;	// set this to true for auth pages to use SSL
 $cfg['debug']					= false;	// set this to true to turn on debug messages
 											// should not be set to true in a production environment
+											
+$cfg['editarea_compress']		= true;		// use the editarea compression program to attempt
+											// to compress the editarea components. Otherwise, it
+											// will include edit_area_loader.js instead. Some
+											// setups have been found to not work correctly with
+											// the compression script
+											
+// error*page is an input_url that is stored in the database
+$cfg['page_403']			= "/error403.html";
+$cfg['page_404']			= "/error404.html";
+
+
+//special directories
+$cfg['img_autofill_dir']		= "/img/banners";		// location of banners
 
 // this is the list of keywords that will get replaced, excluding ##content## and ##time##.
 // basically, the global $render[$x] contains the value to be replaced by ##$x##, where $x is an element in
 // this array. the order *does* matter -- pageroot and rootdir should generally be LAST 											
 $cfg['replace_keywords'] = array('title','banner','menu','db_queries','pageroot','rootdir');
+
+// ************************************************************************
+// do NOT copy items below this line into config.inc.php
+// ************************************************************************
+
+// I'll definitely forget to increment this... 
+$cfg['onnac_version']		 	= "0.0.9.4";
+// turn replacements off, until needed -- this is set to true right before the
+// current webpage is evaluated. If you need to disable output_replace in your page,
+// you MUST do it in the page itself, not in the conf file
+$cfg['output_replace'] = false;
 
 ?>

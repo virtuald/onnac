@@ -6,7 +6,7 @@ Onnac Installation Notes
 	3. Upgrading from an older version
 		a. Version-specific notes
 		b. Recommended upgrade procedure
-	4. Updating the Codepress or FCKeditor editing tools
+	4. Updating the editing tools
 	5. Uninstall
 
 	

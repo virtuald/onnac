@@ -9,7 +9,6 @@ order, however. Ones with *** by them means that I really should do those soon
 		-- Edit file on double click, instead of 'edit' button
 	-- Export parameters
 		-- Time constrained
-		-- Individual files
 	-- "Site map" generator
 		-- Google compatible XML file? 
 	-- Automated dead link finder
