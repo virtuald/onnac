@@ -2,6 +2,7 @@
 --------------------
 	- Fixed: Template editor error
 	- Added: Page/Template preview
+	- Added: Favicon to administrative interface
 
 0.0.9.4 (5/29/2007)
 ---------------------
