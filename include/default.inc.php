@@ -71,7 +71,7 @@ $cfg['replace_keywords'] = array('title','banner','menu','db_queries','pageroot'
 // ************************************************************************
 
 // I'll definitely forget to increment this... 
-$cfg['onnac_version']		 	= "0.0.9.4";
+$cfg['onnac_version']		 	= "0.0.9.5";
 // turn replacements off, until needed -- this is set to true right before the
 // current webpage is evaluated. If you need to disable output_replace in your page,
 // you MUST do it in the page itself, not in the conf file

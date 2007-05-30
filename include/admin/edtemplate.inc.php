@@ -40,8 +40,9 @@ function edtemplate($error = "no"){
 	$template_name = get_get_var('template_name');
 	$ed_action = get_get_var('ed_action');
 	$ajax = get_get_var('ajax');
+	$preview = get_post_var('preview');
 	
-	if ($error == "no" && $ajax != 'true')
+	if ($error == "no" && $ajax != 'true' && $preview != 'yes')
 		echo "<h4>Template Editor</h4>";
 	
 	if ($template_id == "" || $error == "shownew"){
@@ -220,6 +221,24 @@ function edtemplate_add_data($template_id,$be_verbose){
 		$h_template_name = htmlentities($_POST['editor_title']);
 	}
 	
+	// try preview
+	if (get_post_var('preview') == 'yes'){
+	
+		$content = array();
+		$content[0] = md5('/test/');
+		$content[1] = time();
+		$content[2] = time(); 
+		$content[3] = false;
+		$content[4] = lorem_ipsum();
+		$content[5] = '[Preview] ' . $h_template_name;
+		$content[6] = -1; 
+		$content[7] = -1;
+		$content[8] = $template_id;
+		
+		render_partial('/test/',$content,false);
+		return 0;
+	}
+	
 	
 	// ok, thats all good. Now, lets update, and if that fails, we shall do an input -- unless we know that its a new template
 	if ($template_id == -1){
@@ -258,6 +277,11 @@ function edtemplate_add_data($template_id,$be_verbose){
 	return 0;	// success
 }
 
+// I just didn't want to put this text in the middle of code..
+function lorem_ipsum(){
+	return "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Integer aliquam risus eu lorem. Etiam ut justo a velit fringilla euismod. Pellentesque auctor, augue id pretium hendrerit, sapien lectus consectetuer nulla, eu tempor nibh nunc eget est. Praesent eu tortor eget mi dignissim elementum. In sed lectus ut urna vestibulum luctus. Vivamus at sapien et nibh lacinia consectetuer. Vestibulum pede. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In enim odio, egestas at, varius sit amet, consectetuer sed, lorem. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Sed et ante vel odio mattis molestie. Integer et arcu. Ut hendrerit. Donec augue orci, euismod eu, mollis vitae, varius vel, libero. Vestibulum in lectus a mi tincidunt tincidunt. Aenean sed mi eu orci commodo tincidunt. Etiam quis sem.</p>
+<p>Donec auctor, justo et condimentum porta, nisi quam tempus purus, vel sagittis lacus nulla a tellus. Nam semper ullamcorper dolor. Donec gravida, dui vitae condimentum congue, quam neque scelerisque metus, at consequat ante lorem et ligula. Suspendisse id leo. Suspendisse justo. Vestibulum ac nisl ut tellus pellentesque faucibus. Praesent vitae magna et sapien dignissim vehicula. Proin volutpat posuere diam. Nulla commodo suscipit tortor. Nam scelerisque bibendum nibh. Maecenas ut justo. Nulla consequat. Fusce tincidunt convallis est. Ut eget neque. Integer ultrices justo suscipit ante. Pellentesque dui massa, varius in, aliquam at, accumsan sed, tellus.</p>";
 
+}
 
 ?>

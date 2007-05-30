@@ -41,6 +41,8 @@ $render['template'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
 	<title>##title##</title>
 	<link rel="stylesheet" type="text/css" href="##pageroot##/admin.css" />
 	<link rel="stylesheet" type="text/css" href="##pageroot##/admin-print.css" media="print" />
+	<link rel="icon" href="##pageroot##/favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="##pageroot##/favicon.ico" type="image/x-icon">
 	<script type="text/javascript" src="##pageroot##/admin.js"></script>
 </head>
 <body>
@@ -112,7 +114,7 @@ if ($auth->verifyMembership($perm_view)){
 $mode = get_get_var('mode');
 
 // show this
-if (!$ajax)
+if (!$ajax && !(get_post_var('preview') == 'yes'))
 	echo '<div id="adm_logout">Logged in as: ' . $auth->username . '<br/><a href="##pageroot##/?logout=dologout">Logout</a></div>';
 	
 	

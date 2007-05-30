@@ -688,6 +688,23 @@ function edurl_add_data($url,$be_verbose){
 		return 1;
 	}
 	
+	if (get_post_var('preview') == 'yes'){
+	
+		$content = array();
+		$content[0] = md5($new_url);
+		$content[1] = time();
+		$content[2] = time(); 
+		$content[3] = $execute;
+		$content[4] = $_POST['editor_content'];
+		$content[5] = '[Preview] ' . $title;
+		$content[6] = $menuID; 
+		$content[7] = $bannerID;
+		$content[8] = $templateID;
+		
+		render_partial($new_url,$content,false);
+		return 0;
+	}
+	
 	// ok, thats all good. Now, lets update, and if that fails, we shall do an input
 	$result = db_query("UPDATE $cfg[t_content] SET url = '$new_url', url_hash = '" . md5($new_url) . "', page_execute = '$execute', page_title = '$title', banner_id = '$bannerID', template_id = '$templateID', menu_id = '$menuID', page_content = '$content', last_update = NOW(), last_update_by = '" . $auth->username . "' WHERE url_hash = '" . md5($url) . "'");
 	

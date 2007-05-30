@@ -53,6 +53,10 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 	$cp_idx = 1;
 	
 	if ($type == 'edurl'){
+	
+		global $render;
+		$render['title'] = htmlentities($unique_id);
+	
 		// what language should we set?
 		
 		$info = pathinfo($unique_id);
@@ -412,8 +416,17 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 	}
 
 	function formSubmit(){
+		document.editor.target = '_self';
+		document.editor.preview.value = 'no';
 		document.editor.editor_content.value = getCode();
 		window.onbeforeunload = null;
+		document.editor.submit();
+	}
+	
+	function formPreview(){
+		document.editor.target = '_blank';
+		document.editor.preview.value = 'yes';
+		document.editor.editor_content.value = getCode();
 		document.editor.submit();
 	}
 
@@ -424,7 +437,7 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 //--></script>
 
 <?php if ($type == 'edurl'){ ?>
-<form name="editor" action="##pageroot##/?mode=editor&amp;page_url=<?php echo htmlentities($unique_id);?>&amp;ed_action=change" method="post">
+<form name="editor" action="##pageroot##/?mode=edurl&amp;page_url=<?php echo htmlentities($unique_id);?>&amp;ed_action=change" method="post">
 <table>
 	<tr><td>URL</td><td><input type="text" name="editor_url" size="40" value="<?php echo htmlentities($unique_id); ?>"/></td>
 	
@@ -458,10 +471,11 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 
 <form name="editor" action="##pageroot##/?mode=edtemplate&amp;template_id=<?php echo htmlentities($unique_id);?>&amp;ed_action=change" method="post" onsubmit="formSubmit()">
 	Template Name <input type="text" name="editor_title" size="50" value="<?php echo htmlentities($title); ?>"/>
-</form>
+
 
 <?php } ?>
 <input type="hidden" value="" name="editor_content"/>
+<input type="hidden" value="no" name="preview" />
 </form>
 
 <p><em>Special strings:</em><br/>
@@ -520,6 +534,7 @@ function editor_render($type,$unique_id,$title,$execute,$bannerID,$templateID,$m
 <p><em>Warning: any changes made here, and submitted, will immediately show on the website!</em></p>
 
 <input type="button" value="Change content" onclick="formSubmit()">
+<input type="button" value="Preview" onclick="formPreview()">
 <?php	
 
 }

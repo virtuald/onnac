@@ -53,7 +53,7 @@ require_once("./include/http304.inc.php");
 	to render the page and will return an array of ('filename','content','filetime','executable');
 	
 */
-function render_page($input_url, $error_url = 0, $simulate = false){
+function render_page($input_url, $error_url = false, $simulate = false){
 	
 	// globals -- this allows more flexibility, because we can include this from multiple files, and use multiple 
 	// databases and such... 
@@ -101,7 +101,7 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	
 	if ($is_404){
 		
-		if ($error_url == 0){
+		if ($error_url === false){
 			
 			// page does not exist!!! load the error page. redirect.. but first, send this header.  
 			header("HTTP/1.x 404 Not Found");
@@ -109,8 +109,10 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 		
 		}else{
 		
+			$info = parse_url($cfg['rootURL']);
+		
 			// send a simple not found message... header has already been sent
-			echo "<html><title>Not Found</title><body><h1>Not Found</h1><p>The requested URL " . htmlentities($error_url) . " was not found</p><p>Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.</p>";
+			echo "<html><title>Not Found</title><body><h1>Not Found</h1><p>The requested URL " . htmlentities($info['path'] . $error_url) . " was not found</p><p>Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.</p>";
 			echo "<hr><address>Powered by Onnac $cfg[onnac_version]</address></body></html>";
 			
 		}
@@ -147,24 +149,12 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 		set_mime_type($input_url);
 	}
 	
-	// save this for later
-	$retdate = $content[1];
-
-	
-	// determine the page root from the passed URL
-	// this is here now instead of in index to facilitate HTML exporting :)
-	$pos = strrpos($input_url,'/');
-	if ($pos === false)
-		$cfg['page_root'] = $cfg['rootURL'];
-	else
-		$cfg['page_root'] = $cfg['rootURL'] . substr($input_url,0,$pos);
-	
-	
 	// TODO: Inhibit counters on some pages
 	// update the page counter -- visited_count, last_visit
 	if (!$simulate)
 		db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '$input_url_md5'");
 
+	// finish the page render
 	return render_partial($input_url,$content,$simulate);
 	
 }
@@ -184,6 +174,14 @@ function render_partial($input_url,$content,$simulate){
 	$render['template'] = "";
 	$render['title'] = $content[5];
 	$render['input_url'] = $input_url;
+	
+	// determine the page root from the passed URL
+	// this is here now instead of in index to facilitate HTML exporting/previewing
+	$pos = strrpos($input_url,'/');
+	if ($pos === false)
+		$cfg['page_root'] = $cfg['rootURL'];
+	else
+		$cfg['page_root'] = $cfg['rootURL'] . substr($input_url,0,$pos);
 	
 	// check to see if we need to render a menu
 	if ($content[6] >= 0){
@@ -270,7 +268,7 @@ function render_partial($input_url,$content,$simulate){
 	
 	// simulation
 	if ($simulate)
-		return array($input_url,$content[4],$retdate,$content[3]);
+		return array($input_url,$content[4],$content[1],$content[3]);
 	
 	// do we need to interpret any PHP in the content? Do it here. This also echos out
 	// all the content as well, so we get two things in one package! :)
