@@ -149,13 +149,7 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	
 	// save this for later
 	$retdate = $content[1];
-	
-	// ok, more initialization here
-	$render['menu'] = "";
-	$render['banner'] = "";
-	$render['template'] = "";
-	$render['title'] = $content[5];
-	$render['input_url'] = $input_url;
+
 	
 	// determine the page root from the passed URL
 	// this is here now instead of in index to facilitate HTML exporting :)
@@ -170,6 +164,26 @@ function render_page($input_url, $error_url = 0, $simulate = false){
 	// update the page counter -- visited_count, last_visit
 	if (!$simulate)
 		db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '$input_url_md5'");
+
+	return render_partial($input_url,$content,$simulate);
+	
+}
+
+/*
+	render a page (used for previewing)
+	
+	$content = url_hash, last_update, other_update, page_execute, page_content, page_title, menu_id, banner_id, template_id
+*/
+function render_partial($input_url,$content,$simulate){
+
+	global $cfg,$render;
+	
+	// ok, initialization here
+	$render['menu'] = "";
+	$render['banner'] = "";
+	$render['template'] = "";
+	$render['title'] = $content[5];
+	$render['input_url'] = $input_url;
 	
 	// check to see if we need to render a menu
 	if ($content[6] >= 0){

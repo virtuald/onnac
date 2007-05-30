@@ -104,7 +104,7 @@ if (!$dbCon){
 	$cfg['basedir'] = str_replace('\\','/',dirname(__FILE__));
 		
 	// nasty hack -- but only way to resolve nesting in directories... works in windows too!
-	if (strstr($input_url,$cfg['basedir']) || substr($input_url,0,2) == "//")
+	if (stristr($input_url,$cfg['basedir']) || substr($input_url,0,2) == "//")
 		$input_url = "";
 	
 	// render the page
