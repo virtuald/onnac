@@ -28,7 +28,12 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 	Administrative page manager for website
-	Entry page, everything goes through here. 
+	Entry page, everything goes through here.
+	
+	All admin pages use ##pageroot##, so you could technically rename the
+	editing interface to something other than /interface/, all you need to do
+	is move the actual directory /interface/ to the same thing that you change
+	the URL to.
 	
 */
 
@@ -190,15 +195,18 @@ switch ($mode){
 		}
 		break;
 
-	default:
+	case "":
 	
-	// inane warnings
-	if (get_magic_quotes_gpc()){
-		echo "<p><strong>Warning!</strong> <em>magic_quotes_gpc</em> is enabled! This may significantly degrade performance, and it is <em>highly</em> recommended that you disable them!</p>";
-	}
+		// inane warnings
+		if (get_magic_quotes_gpc()){
+			echo "<p><strong>Warning!</strong> <em>magic_quotes_gpc</em> is enabled! This may significantly degrade performance, and it is <em>highly</em> recommended that you disable them!</p>";
+		}
 	
 ?><p>Select an option from the top menu.</p><p><a href="##rootdir##">Root directory</a></p><?php
-
+		break;
+		
+	default:
+		onnac_error("An invalid mode <strong>&quot;" . htmlentities($mode) . "&quot;</strong> was specified! Please report this error to Onnac developers, with the URL in the address bar and the URL of the page you were previously at (press the back button). Thanks.");
 }
 
 

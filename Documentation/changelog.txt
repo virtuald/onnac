@@ -1,4 +1,9 @@
-0.0.9.4 (in process)
+0.0.9.5 (5/30/2007)
+--------------------
+	- Fixed: Template editor error
+	- Added: Page/Template preview
+
+0.0.9.4 (5/29/2007)
 ---------------------
 	- Fixed: Import errors
 	- Fixed: some websites require a different htaccess
