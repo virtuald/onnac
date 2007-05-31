@@ -233,7 +233,7 @@ function edtemplate_add_data($template_id,$be_verbose){
 		$content[5] = '[Preview] ' . $h_template_name;
 		$content[6] = -1; 
 		$content[7] = -1;
-		$content[8] = $template_id;
+		$content[8] = -1;
 		$content[9] = $_POST['editor_content'];
 		
 		render_partial('/test/',$content,false);
