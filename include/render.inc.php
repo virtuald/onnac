@@ -154,6 +154,9 @@ function render_page($input_url, $error_url = false, $simulate = false){
 	if (!$simulate)
 		db_query("UPDATE $cfg[t_content] SET visited_count = visited_count + 1, last_visit = NOW() WHERE url_hash = '$input_url_md5'");
 
+	// set the default template, just in case
+	$content[9] = "##content##";
+	
 	// finish the page render
 	return render_partial($input_url,$content,$simulate);
 	
@@ -162,7 +165,7 @@ function render_page($input_url, $error_url = false, $simulate = false){
 /*
 	render a page (used for previewing)
 	
-	$content = url_hash, last_update, other_update, page_execute, page_content, page_title, menu_id, banner_id, template_id
+	$content = url_hash, last_update, other_update, page_execute, page_content, page_title, menu_id, banner_id, template_id, default template
 */
 function render_partial($input_url,$content,$simulate){
 
@@ -239,9 +242,10 @@ function render_partial($input_url,$content,$simulate){
 		}
 	}
 	
+	
 	// some pages just have a blank template
 	if ($content[8] < 0){
-		$render['template'] = "##content##";
+		$render['template'] = $content[9];
 	}else{
 		// get template
 		$result = db_query("SELECT template FROM $cfg[t_templates] WHERE template_id = $content[8]");

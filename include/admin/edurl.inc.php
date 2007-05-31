@@ -700,6 +700,7 @@ function edurl_add_data($url,$be_verbose){
 		$content[6] = $menuID; 
 		$content[7] = $bannerID;
 		$content[8] = $templateID;
+		$content[9] = "##content##";
 		
 		render_partial($new_url,$content,false);
 		return 0;
