@@ -38,12 +38,20 @@
 */
 
 // first, setup the template
-global $cfg,$render;
+global $cfg,$render,$auth;
+require_once "./include/auth.inc.php";
+
+// permissions -- these need to be redefined
+$perm_modify = "Modify site";
+$perm_view = "View pagecounts";
+$auth = new authentication("$perm_modify;$perm_view");
+
 	
 $render['template'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
 	<title>##title##</title>
+	<meta name="robots" content="noindex,nofollow">
 	<link rel="stylesheet" type="text/css" href="##pageroot##/admin.css" />
 	<link rel="stylesheet" type="text/css" href="##pageroot##/admin-print.css" media="print" />
 	<link rel="icon" href="##pageroot##/favicon.ico" type="image/x-icon">
@@ -61,7 +69,7 @@ $render['template'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
 	<div id="adm_content">
 		##content##
 	</div>
-	<div id="adm_footer">Onnac &copy;2006-2007 Dustin Spicuzza &amp; contributors<br/>
+	<div id="adm_footer">Onnac' . ($auth->loggedIn ? " $cfg[onnac_version]" : '') . ' &copy;2006-2007 Dustin Spicuzza &amp; contributors<br/>
 	##db_queries## queries executed in ##time## seconds.</div>
 </div>
 </body>
@@ -76,16 +84,7 @@ header("Cache-Control: no-cache, private");
 $ajax = get_get_var('ajax') == 'true' ? true : false;
 if ($ajax)
 	$cfg['output_replace'] = false;
-	
 
-require_once "./include/auth.inc.php";
-
-// permissions
-$perm_modify = "Modify site";
-$perm_view = "View pagecounts";
-
-global $auth;
-$auth = new authentication("$perm_modify;$perm_view");
 	
 if (!$auth->loggedIn){
 	
