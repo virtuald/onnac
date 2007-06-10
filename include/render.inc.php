@@ -158,7 +158,7 @@ function render_page($input_url, $error_url = false, $simulate = false){
 	$content[9] = "##content##";
 	
 	// finish the page render
-	return render_partial($input_url,$content,$simulate);
+	return render_partial($input_url,$content,$simulate,$error_url);
 	
 }
 
@@ -166,8 +166,9 @@ function render_page($input_url, $error_url = false, $simulate = false){
 	render a page (used for previewing)
 	
 	$content = url_hash, last_update, other_update, page_execute, page_content, page_title, menu_id, banner_id, template_id, default template
+	$error_url is used in error404.html
 */
-function render_partial($input_url,$content,$simulate){
+function render_partial($input_url,$content,$simulate,$error_url){
 
 	global $cfg,$render;
 	
