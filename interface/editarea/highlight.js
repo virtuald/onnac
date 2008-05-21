@@ -1,11 +1,14 @@
 	// change_to: "on" or "off"
 	EditArea.prototype.change_highlight= function(change_to){
-		
-		if(this.settings["syntax"].length==0){
-			this.switchClassSticky(document.getElementById("highlight"), 'editAreaButtonDisabled', true);
-			this.switchClassSticky(document.getElementById("reset_highlight"), 'editAreaButtonDisabled', true);
+		if(this.settings["syntax"].length==0 && change_to==false){
+			this.switchClassSticky($("highlight"), 'editAreaButtonDisabled', true);
+			this.switchClassSticky($("reset_highlight"), 'editAreaButtonDisabled', true);
 			return false;
 		}
+		
+		if(this.do_highlight==change_to)
+			return false;
+	
 			
 		if(this.nav['isIE'])
 			this.getIESelection();
@@ -25,7 +28,7 @@
 	};
 	
 	EditArea.prototype.disable_highlight= function(displayOnly){		
-		document.getElementById("selection_field").innerHTML="";
+		$("selection_field").innerHTML="";
 		this.content_highlight.style.visibility="hidden";
 		// replacing the node is far more faster than deleting it's content in firefox
 		var new_Obj= this.content_highlight.cloneNode(false);
@@ -45,12 +48,12 @@
 		//setAttribute(icon, "class", getAttribute(icon, "class").replace(/ selected/g, "") );
 		//this.restoreClass(icon);
 		//this.switchClass(icon,'editAreaButtonNormal');
-		this.switchClassSticky(document.getElementById("highlight"), 'editAreaButtonNormal', false);
-		this.switchClassSticky(document.getElementById("reset_highlight"), 'editAreaButtonDisabled', true);
+		this.switchClassSticky($("highlight"), 'editAreaButtonNormal', true);
+		this.switchClassSticky($("reset_highlight"), 'editAreaButtonDisabled', true);
 	
 		this.do_highlight=false;
 	
-		this.switchClassSticky(document.getElementById("change_smooth_selection"), 'editAreaButtonSelected', true);
+		this.switchClassSticky($("change_smooth_selection"), 'editAreaButtonSelected', true);
 		if(typeof(this.smooth_selection_before_highlight)!="undefined" && this.smooth_selection_before_highlight===false){
 			this.change_smooth_selection_mode(false);
 		}
@@ -59,21 +62,7 @@
 	};
 
 	EditArea.prototype.enable_highlight= function(){
-		width=document.getElementById("editor").offsetWidth;
-		height=document.getElementById("editor").offsetHeight;
-		if(this.nav['isGecko'] || this.nav['isOpera'] || this.nav['isIE']>=7){
-			width-=2;
-			height-=2;
-		}
-		if(this.textarea.value.length>0){
-			this.should_display_processing_screen=true;
-			document.getElementById("processing").style.display="block";
-			document.getElementById("processing").style.width= width+"px";
-			document.getElementById("processing").style.height= height+"px";
-		}
-		/*var selec=document.getElementById("selection_field");
-		selec.style.visibility="visible";		*/
-			
+		this.show_waiting_screen();
 			
 		this.content_highlight.style.visibility="visible";
 		var new_class=parent.getAttribute(this.textarea,"class")+" hidden";
@@ -85,19 +74,20 @@
 		//var icon= document.getElementById("highlight");
 		//setAttribute(icon, "class", getAttribute(icon, "class") + " selected");
 		//this.switchClass(icon,'editAreaButtonSelected');
-		//this.switchClassSticky(document.getElementById("highlight"), 'editAreaButtonNormal', false);
-		this.switchClassSticky(document.getElementById("highlight"), 'editAreaButtonSelected', false);
-		this.switchClassSticky(document.getElementById("reset_highlight"), 'editAreaButtonNormal', false);
+		//this.switchClassSticky($("highlight"), 'editAreaButtonNormal', false);
+		this.switchClassSticky($("highlight"), 'editAreaButtonSelected', false);
+		this.switchClassSticky($("reset_highlight"), 'editAreaButtonNormal', false);
 		
 		this.smooth_selection_before_highlight=this.smooth_selection;
 		if(!this.smooth_selection)
 			this.change_smooth_selection_mode(true);
-		this.switchClassSticky(document.getElementById("change_smooth_selection"), 'editAreaButtonDisabled', true);
+		this.switchClassSticky($("change_smooth_selection"), 'editAreaButtonDisabled', true);
 		
 		
 		this.do_highlight=true;
 		this.resync_highlight();
 					
+		this.hide_waiting_screen();
 		//area.onkeyup="";
 		/*if(!displayOnly){
 			this.do_highlight=true;
@@ -247,7 +237,7 @@
 		tps2=date.getTime();
 		//updated_highlight= "<div class='keywords'>"+updated_highlight+"</div>";
 		var hightlighted_text= stay_begin + updated_highlight + stay_end;
-		//parent.document.getElementById("test_pre").innerHTML="<div class='keywords'>"+hightlighted_text+"</div>";
+		//parent.$("test_pre").innerHTML="<div class='keywords'>"+hightlighted_text+"</div>";
 		//this.previous_hightlight_content= tab_text.join("<br>");
 		
 		date= new Date();
@@ -255,13 +245,11 @@
 					
 		// update the content of the highlight div by first updating a clone node (as there is no display in the same time for this node it's quite faster (5*))
 		var new_Obj= this.content_highlight.cloneNode(false);
-		//new_Obj.innerHTML= "<div class='keywords'>"+hightlighted_text+"</div>";	
-		if(this.nav['isIE'] || this.nav['isOpera'])
+		if(this.nav['isIE'] || this.nav['isOpera'] || this.nav['isFirefox'] >= 3 )
 			new_Obj.innerHTML= "<pre><span class='"+ this.settings["syntax"] +"'>" + hightlighted_text.replace("\n", "<br/>") + "</span></pre>";	
 		else
 			new_Obj.innerHTML= "<span class='"+ this.settings["syntax"] +"'>"+ hightlighted_text +"</span>";			
-		this.content_highlight.parentNode.insertBefore(new_Obj, this.content_highlight);
-		this.content_highlight.parentNode.removeChild(this.content_highlight);			
+		this.content_highlight.parentNode.replaceChild(new_Obj, this.content_highlight);
 		this.content_highlight= new_Obj;
 		if(infos["full_text"].indexOf("\r")!=-1)
 			this.last_text_to_highlight= infos["full_text"].replace(/\r/g, "");
@@ -278,17 +266,13 @@
 			tps_join=inner1-tps2;			
 			tps_td2=tps3-inner1;
 			//lineNumber=tab_text.length;
-			//this.debug.value+=" \nNB char: "+document.getElementById("src").value.length+" Nb line: "+ lineNumber;
+			//this.debug.value+=" \nNB char: "+$("src").value.length+" Nb line: "+ lineNumber;
 			this.debug.value= "Tps optimisation "+tot1+" (second part: "+tot_middle+") | tps reg exp: "+tot2+" | tps join: "+tps_join;
 			this.debug.value+= " | tps update highlight content: "+tps_td2+"("+tps3+")\n";
 			this.debug.value+=debug_opti;
 		//	this.debug.value+= "highlight\n"+hightlighted_text;
 		}
-	
-		if(this.should_display_processing_screen){
-			this.should_display_processing_screen= false;
-			document.getElementById("processing").style.display="none";
-		}		
+		
 	};
 	
 	EditArea.prototype.resync_highlight= function(reload_now){

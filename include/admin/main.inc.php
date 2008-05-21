@@ -69,7 +69,7 @@ $render['template'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional
 	<div id="adm_content">
 		##content##
 	</div>
-	<div id="adm_footer">Onnac' . ($auth->loggedIn ? " $cfg[onnac_version]" : '') . ' &copy;2006-2007 Dustin Spicuzza &amp; contributors<br/>
+	<div id="adm_footer">Onnac' . ($auth->loggedIn ? " $cfg[onnac_version]" : '') . ' &copy;2006-2008 Dustin Spicuzza &amp; contributors<br/>
 	##db_queries## queries executed in ##time## seconds.</div>
 </div>
 </body>
