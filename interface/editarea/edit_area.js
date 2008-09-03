@@ -262,6 +262,7 @@
 		if(this.settings['is_multi_files']!=false)
 			this.open_file({'id': this.curr_file, 'text': ''});
 	
+		this.set_wrap_text( this.settings['wrap_text'] );
 		
 		setTimeout("editArea.focus();editArea.manage_size();editArea.execCommand('EA_load');", 10);		
 		//start checkup routine
@@ -296,19 +297,22 @@
 			
 			//1) Manage display width
 			//1.1) Calc the new width to use for display
-			var area_width= this.textarea.scrollWidth;
-			var area_height= this.textarea.scrollHeight;
-			if(this.nav['isOpera']){
-				area_height= this.last_selection['nb_line']*this.lineHeight;
-				area_width=10000; /* TODO: find a better way to fix the width problem */								
+			if( this.settings['wrap_text'] )
+			{
+				var area_width= this.result.offsetWidth -50;
+			}
+			else
+			{
+				var area_width= this.textarea.scrollWidth;
+				var area_height= this.textarea.scrollHeight;
+				if(this.nav['isOpera']){
+					area_width=10000; /* TODO: find a better way to fix the width problem */								
+				}
 			}
 			
 			if(this.nav['isIE']>=7)
 				area_width-=45;
 	
-			if(this.nav['isGecko'] && this.smooth_selection && this.last_selection["nb_line"])
-				area_height= this.last_selection["nb_line"]*this.lineHeight;
-			
 			//1.2) the width is not the same, we must resize elements
 			if(this.textarea.previous_scrollWidth!=area_width)
 			{	

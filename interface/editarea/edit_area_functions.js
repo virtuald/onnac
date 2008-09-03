@@ -534,7 +534,7 @@
 			var selStart= this.textarea.selectionStart;
 			var selEnd= this.textarea.selectionEnd;
 			var html= parent.document.getElementsByTagName("html")[0];
-			var frame= parent.$("frame_"+this.id);
+			var frame= parent.document.getElementById("frame_"+this.id);
 
 			this.fullscreen['old_overflow']= parent.get_css_property(html, "overflow");
 			this.fullscreen['old_height']= parent.get_css_property(html, "height");
@@ -596,7 +596,7 @@
 			var selStart= this.textarea.selectionStart;
 			var selEnd= this.textarea.selectionEnd;
 			
-			var frame= parent.$("frame_"+this.id);	
+			var frame= parent.document.getElementById("frame_"+this.id);	
 			frame.style.position="static";
 			frame.style.zIndex= this.fullscreen['old_zIndex'];
 		
@@ -726,6 +726,38 @@
 			this.update_size();
 	};
 	
+	/***** Wrap mode *****/
+	// open a new tab for the given file
+	EditArea.prototype.set_wrap_text= function(to){
+		this.settings['wrap_text']	= to;
+		if( this.settings['wrap_text'] )
+		{
+			wrap_mode = 'soft';
+			this.container.className+= ' wrap_text';
+		}
+		else
+		{
+			wrap_mode = 'off';
+			this.container.className= this.container.className.replace(/ wrap_text/g, '');
+		}
+		
+		
+		var t= this.textarea;
+		t.wrap= wrap_mode;
+		t.setAttribute('wrap', wrap_mode);
+		// seul IE supporte de changer à la volée le wrap mode du textarea
+		if(!this.nav['isIE']){
+			var start=t.selectionStart, end= t.selectionEnd;
+			var parNod = t.parentNode, nxtSib = t.nextSibling;
+			parNod.removeChild(t); parNod.insertBefore(t, nxtSib);
+			this.area_select(start, end-start);
+	/*	//	v = s.value;
+			n = s.cloneNode(true);
+			n.setAttribute("wrap", val);
+			s.parentNode.replaceChild(n, s);
+		//	n.value = v;*/
+		}
+	};	
 	/***** tabbed files managing functions *****/
 	
 	// open a new tab for the given file

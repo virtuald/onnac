@@ -90,13 +90,8 @@ function keyDown(e){
 				use=true;
 				editArea.execCommand("redo");
 				break;
-            case "s":
-				editArea.execCommand("save");
-				use=true;
-				break;
 			default:
 				break;			
-
 		}		
 	}		
 	

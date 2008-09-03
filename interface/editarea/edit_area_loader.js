@@ -7,7 +7,7 @@
 ******/
 
 function EditAreaLoader(){
-	this.version= "0.7.1.1";
+	this.version= "0.7.1.3";
 	date= new Date();
 	this.start_time=date.getTime();
 	this.win= "loading";	// window loading state
@@ -45,7 +45,7 @@ function EditAreaLoader(){
 		,allow_toggle: true		// true or false
 		,language: "en"
 		,syntax: ""
-		,syntax_selection_allow: "basic,brainfuck,c,cpp,css,html,js,pas,php,python,ruby,sql,vb,xml"
+		,syntax_selection_allow: "basic,brainfuck,c,cpp,css,html,js,pas,php,python,ruby,robotstxt,sql,tsql,vb,xml"
 		,display: "onload" 		// onload or later
 		,max_undo: 30
 		,browsers: "known"	// all or known
@@ -53,6 +53,7 @@ function EditAreaLoader(){
 		,gecko_spellcheck: false	// enable/disable by default the gecko_spellcheck
 		,fullscreen: false
 		,is_editable: true
+		,wrap_text: false
 		,load_callback: ""		// click on load button (function name)
 		,save_callback: ""		// click on save button (function name)
 		,change_callback: ""	// textarea onchange trigger (function name)
