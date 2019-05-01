@@ -214,6 +214,14 @@ class authentication {
 						$_FILES = $_SESSION['files'];
 						unset($_SESSION['files']);
 					}
+				} else {
+					if ($this->auth_debug){
+						echo "Auth failure point: key != expected ('" . htmlentities($key) . "' != '" . htmlentities($expected) . "')<br/>";
+					}
+				}
+			} else {
+				if ($this->auth_debug){
+					echo "Auth failure point: no rows found for " . htmlentities($query) . "<br/>"; 
 				}
 			}
 		}
