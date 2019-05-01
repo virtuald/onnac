@@ -32,17 +32,20 @@
 	
 */
 
+global $dblink;
+$dblink = null;
 
 function db_connect($server, $username, $password, $db_name){
 	
-	global $cfg;
+	global $cfg, $dblink;
 	switch($cfg['db_type']){
 	
 		case "mysql": 	
-			$ret=mysql_connect($server, $username, $password);
-			if(!mysql_select_db($db_name)) 
+			$dblink=mysqli_connect($server, $username, $password, $db_name);
+			if (mysqli_connect_errno($dblink)) {
 				return false;
-			return $ret;
+			}
+			return true;
 		
 		case "postgre": 
 			return pg_connect("host=".$server." user=".$username." password=".$password." dbname=".$db_name);
@@ -53,13 +56,13 @@ function db_connect($server, $username, $password, $db_name){
 }
 
 // php doesn't support function overloading :(
-function db_close($link = null){
+function db_close(){
 
-	global $cfg;
+	global $cfg, $dblink;
 	if ($link){
 		switch($cfg['db_type']){
 			case "mysql": 	
-				return mysql_close($link);
+				return mysqli_close($dblink);
 				
 			case "postgre":	
 				return pg_close($link);
@@ -70,7 +73,7 @@ function db_close($link = null){
 	}else{
 		switch($cfg['db_type']){
 			case "mysql": 	
-				return mysql_close();
+				return mysqli_close($dblink);
 				
 			case "postgre":	
 				return pg_close();
@@ -84,7 +87,7 @@ function db_close($link = null){
 // additional parameter for installer
 function db_query($query, $nowdebug = false){
 
-	global $cfg;
+	global $cfg, $dblink;
 	
 	if ($cfg['debug'] == true || $nowdebug == true)
 		$cfg['db_last_sql_query'] = $query;
@@ -97,7 +100,7 @@ function db_query($query, $nowdebug = false){
 	switch($cfg['db_type']){
 	
 		case "mysql": 	
-			return mysql_query($query);
+			return mysqli_query($dblink, $query);
 			
 		case "postgre": 
 			return pg_query($query);
@@ -113,7 +116,7 @@ function db_num_rows($result){
 	switch($cfg['db_type']){
 	
 		case "mysql": 	
-			return mysql_num_rows($result);
+			return mysqli_num_rows($result);
 			
 		case "postgre":
 			return pg_num_rows($result);
@@ -128,7 +131,7 @@ function db_fetch_row($result){
 	global $cfg;
 	switch($cfg['db_type']){
 		case "mysql": 	
-			return mysql_fetch_row($result);
+			return mysqli_fetch_row($result);
 			
 		case "postgre": 
 			return pg_fetch_row($result);
@@ -143,7 +146,7 @@ function db_fetch_array($result){
 	global $cfg;
 	switch($cfg['db_type']){
 		case "mysql": 	
-			return mysql_fetch_array($result);
+			return mysqli_fetch_array($result);
 		
 		case "postgre": 
 			return pg_fetch_array($result);
@@ -153,10 +156,10 @@ function db_fetch_array($result){
 }
 
 function db_get_last_id($table,$field){
-	global $cfg;
+	global $cfg, $dblink;
 	switch($cfg['db_type']){
 		case "mysql":
-			return mysql_query("SELECT LAST_INSERT_ID()");
+			return mysqli_query($dblink, "SELECT LAST_INSERT_ID()");
 		
 		case "postgre":
 			// im not 100% confident about this, but theres not a better way
@@ -171,7 +174,7 @@ function db_fetch_assoc($result){
 	global $cfg;
 	switch($cfg['db_type']){
 		case "mysql": 	
-			return mysql_fetch_assoc($result);
+			return mysqli_fetch_assoc($result);
 		
 		case "postgre": 
 			return pg_fetch_assoc($result);
@@ -182,10 +185,10 @@ function db_fetch_assoc($result){
 
 function db_escape_string($unescaped_string){
 	
-	global $cfg;
+	global $cfg, $dblink;
 	switch($cfg['db_type']){
 		case "mysql": 	
-			return mysql_escape_string($unescaped_string);
+			return mysqli_real_escape_string($dblink, $unescaped_string);
 			
 		case "postgre": 
 			return pg_escape_string($unescaped_string);
@@ -202,10 +205,10 @@ function db_total_escape(&$item,$key){
 
 function db_affected_rows($result){
 	
-	global $cfg;
+	global $cfg, $dblink;
 	switch($cfg['db_type']){
 		case "mysql": 	
-			return mysql_affected_rows();
+			return mysqli_affected_rows($dblink);
 			
 		case "postgre": 
 			return pg_affected_rows($result);
@@ -217,10 +220,10 @@ function db_affected_rows($result){
 
 function db_error(){
 
-	global $cfg;
+	global $cfg, $dblink;
 	switch($cfg['db_type']){
 		case "mysql": 	
-			return mysql_error();
+			return mysqli_error($dblink);
 			
 		case "postgre": 
 			return pg_last_error();
@@ -252,7 +255,7 @@ function db_begin_transaction(){
 
 	global $cfg;
 	if ($cfg['enable_transactions'] == true)
-		return db_query("BEGIN");
+		return db_query($dblink, "BEGIN");
 	return true;
 }
 
@@ -326,7 +329,7 @@ function db_version(){
 	
 	switch ($cfg['db_type']){
 		case "mysql":
-			return mysql_get_server_info();
+			return mysqli_get_server_info();
 		
 		case "postgre":
 			if (!function_exists('pg_version'))
