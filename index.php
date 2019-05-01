@@ -84,6 +84,8 @@ if (!isset($_GET['url'])){
 	die;
 }
 
+// Enable default timezone (required since PHP 5.1)
+date_default_timezone_set($cfg['timezone']);
 
 // Lets make a connection to the database here
 $dbCon = db_connect($cfg['db_host'],$cfg['db_user'],$cfg['db_pass'],$cfg['db_name']);

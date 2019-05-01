@@ -77,4 +77,5 @@ $cfg['onnac_version']		 	= "0.0.9.5";
 // you MUST do it in the page itself, not in the conf file
 $cfg['output_replace'] = false;
 
+$cfg['timezone'] = 'UTC';
 ?>
