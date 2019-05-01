@@ -321,7 +321,7 @@ var requestURI = unescape('<?php echo rawurlencode($_SERVER['REQUEST_URI']); ?>'
 		
 var auth_form_submit = function(){
 
-	document.frm_login.<?php echo $key_key; ?>.value = hex_md5('<?php echo htmlentities($this->session_id);?>:' + hex_md5(document.frm_login.<?php echo $user_key; ?>.value + ':' + document.frm_login.<?php echo $key_key; ?>.value));
+	document.frm_login.<?php echo $key_key; ?>.value = hex_md5('<?php echo htmlentities($this->session_id); ?>:' + hex_md5(document.frm_login.<?php echo $user_key; ?>.value + ':' + document.frm_login.<?php echo $key_key; ?>.value));
 	
 	<?php if ($ajax){?>
 	
